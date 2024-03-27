@@ -3,17 +3,15 @@ package org.example.interviewtemplate
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.awaitSingle
 import kotlin.contracts.ExperimentalContracts
+import kotlin.math.log
 
-suspend fun mapToUserEntity(spec: DatabaseClient.GenericExecuteSpec): UserEntity? {
+suspend fun mapToUserEntity(spec: DatabaseClient.GenericExecuteSpec, input: UserEntity): UserEntity? {
     return buildUser {
-        val fetchSpec = spec.map { row, metadata ->
-            check(metadata.columnMetadatas.size == 4) {
-                "Size should be equal of `UserEntity` fields."
-            }
+        val fetchSpec = spec.map { row, _ ->
             id = row.getColumn<Int>("id")
-            name = row.getColumn<String>("name")
-            lastName = row.getColumn<String>("last_name")
-            phone = row.getColumn<String>("phone")
+            name = input.name
+            lastName = input.lastName
+            phone = input.phone
         }
         fetchSpec.awaitSingle()
     }

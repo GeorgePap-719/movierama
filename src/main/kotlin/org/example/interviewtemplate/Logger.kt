@@ -20,7 +20,6 @@ fun Logger.metric(msg: String) {
 
 // -------------------------------- lazy-factories --------------------------------
 
-//@JvmName("Debug0")
 fun Logger.debug(message: () -> String) {
-    if (isDebugEnabled) debug(message.toString())
+    if (isDebugEnabled) debug(message())
 }
