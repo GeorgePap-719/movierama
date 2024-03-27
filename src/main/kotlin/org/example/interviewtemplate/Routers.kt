@@ -12,6 +12,7 @@ class Routers(private val userHandler: UserHandler) {
     fun userRoutes() = coRouter {
         accept(MediaType.APPLICATION_JSON).nest {
             POST("api/register", userHandler::register)
+            GET("api/user/{id}", userHandler::findById)
         }
     }
 }

@@ -32,6 +32,7 @@ dependencies {
     implementation("io.asyncer:r2dbc-mysql:1.1.0")
     // -- testing --
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation(kotlin("test"))
 }
 
 tasks.withType<KotlinCompile> {

@@ -3,9 +3,7 @@ package org.example.interviewtemplate
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.serialization.Serializable
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
-import org.springframework.data.r2dbc.core.delete
 import org.springframework.r2dbc.core.DatabaseClient
-import org.springframework.r2dbc.core.await
 import org.springframework.r2dbc.core.awaitSingle
 import org.springframework.r2dbc.core.bind
 import org.springframework.stereotype.Component
@@ -15,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.bodyValueAndAwait
+import org.springframework.web.reactive.function.server.buildAndAwait
 
 @Component
 class UserHandler(private val service: UserService) {
@@ -25,6 +24,16 @@ class UserHandler(private val service: UserService) {
         val body = request.awaitReceive<RegisterUser>()
         val newUser = service.register(body)
         return ServerResponse.ok().bodyValueAndAwait(newUser)
+    }
+
+    suspend fun findById(request: ServerRequest): ServerResponse {
+        logger.info("request: api/user/id")
+        val idAsString = request.pathVariableOrNull("id")
+        requireNotNull(idAsString) { "Target id is missing from path." }
+        val id = idAsString.toIntOrNull()
+            ?: throw IllegalArgumentException("Id must be a positive int, but got:$idAsString.")
+        val user = service.findById(id) ?: return ServerResponse.notFound().buildAndAwait()
+        return ServerResponse.ok().bodyValueAndAwait(user)
     }
 }
 
@@ -57,8 +66,9 @@ class UserService(private val userRepository: UserRepository) {
         return User(id, name, lastName, phone)
     }
 
-    fun findById(id: Int): User? {
-        TODO()
+    suspend fun findById(target: Int): User? {
+        require(target > 0) { "Ids can only be positive, but got:$target." }
+        return userRepository.findById(target)?.toUser()
     }
 }
 
@@ -94,6 +104,14 @@ class UserRepository(private val template: R2dbcEntityTemplate) {
         }
         fetchSpec.awaitSingle()
         return checkNotNull(id)
+    }
+
+    suspend fun findById(target: Int): UserEntity? {
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "SELECT * FROM template.users where id=$target"
+        }
+        return mapToUserEntity(spec)
     }
 
     // Mostly for helping in testing.

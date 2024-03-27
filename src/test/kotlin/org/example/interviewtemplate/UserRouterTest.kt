@@ -11,6 +11,8 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -27,8 +29,8 @@ class UserRouterTest(
 
     @AfterEach
     fun afterEach(): Unit = runBlocking {
-        val rows = userRepository.deleteAll()
-        println("rows deleted:$rows")
+//        val rows = userRepository.deleteAll()
+//        println("rows deleted:$rows")
     }
 
     @Test
@@ -47,7 +49,7 @@ class UserRouterTest(
     }
 
     @Test
-    fun testBadRequest() = runBlocking {
+    fun testRegisterBadRequest() = runBlocking {
         val user = BadRegisterUser("george")
         val response = webClient.post()
             .uri("$userApiUrl/register")
@@ -61,6 +63,21 @@ class UserRouterTest(
     }
 
     data class BadRegisterUser(val name: String)
+
+    @Test
+    fun testFindUserById() = runBlocking {
+        val id = 7
+        webClient.get()
+            .uri("$userApiUrl/user/$id")
+            .accept(MediaType.APPLICATION_JSON)
+            .awaitExchange {
+                println(it.statusCode())
+                assert(it.statusCode().value() == 200)
+                val actualUser = it.awaitBody<User>()
+                val expectedUser = User(7, "george", "pap", "6923")
+                assertEquals(expectedUser, actualUser)
+            }
+    }
 }
 
 fun defaultUrl(port: Int): String = "http://localhost:$port/api/"
