@@ -2,6 +2,8 @@ package org.example.interviewtemplate
 
 import kotlinx.serialization.Serializable
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
+import org.springframework.r2dbc.core.DatabaseClient
+import org.springframework.r2dbc.core.awaitSingle
 import org.springframework.r2dbc.core.bind
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
@@ -69,14 +71,24 @@ class UserRepository(private val template: R2dbcEntityTemplate) {
             .bind<String>(0, input.name)
             .bind<String>(1, input.lastName)
             .bind<String>(2, input.phone)
+        val generatedId = returnGeneratedId(spec)
+        val newUser = input.copy(id = generatedId)
+        return newUser
+    }
+
+    private suspend fun returnGeneratedId(spec: DatabaseClient.GenericExecuteSpec): Int {
         // By default, the behavior of an insert/update statement in the database
         // does not return the inserted/updated rows.
         // It returns the number of inserted/updated rows.
-        val specWithFilter = spec.filter {
-            statement -> statement.returnGeneratedValues("id")
+        val specWithFilter = spec.filter { statement ->
+            statement.returnGeneratedValues("id")
         }
-        val newUser = mapToUserEntity(specWithFilter, input)
-        return checkNotNull(newUser)
+        var id: Int? = null
+        val fetchSpec = specWithFilter.map { row, _ ->
+            id = row.getColumn<Int>("id")
+        }
+        fetchSpec.awaitSingle()
+        return checkNotNull(id)
     }
 }
 
