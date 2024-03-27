@@ -39,11 +39,27 @@ class UserRouterTest(
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
         response.awaitExchange {
-            println("status-code:${it.statusCode()}")
+            assert(it.statusCode().value() == 200)
             val newUser = it.awaitBody<User>()
-            println("received:$newUser")
+            println("response:$newUser")
         }
     }
+
+    @Test
+    fun testBadRequest() = runBlocking {
+        val user = BadRegisterUser("george")
+        val response = webClient.post()
+            .uri("$userApiUrl/register")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(user)
+        response.awaitExchange {
+            assert(it.statusCode().is4xxClientError)
+            println(it.awaitBody<ErrorMessage>())
+        }
+    }
+
+    data class BadRegisterUser(val name: String)
 }
 
 fun defaultUrl(port: Int): String = "http://localhost:$port/api/"

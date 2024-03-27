@@ -1,5 +1,6 @@
 package org.example.interviewtemplate
 
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -22,34 +23,37 @@ import reactor.core.publisher.Mono
 class GlobalExceptionHandler : WebExceptionHandler {
     private val logger = logger()
 
-    override fun handle(exchange: ServerWebExchange, ex: Throwable): Mono<Void> = mono {
-        when (ex) {
-            is IllegalArgumentException -> {
-                logger.debug { ex.stackTraceToString() }
-                exchange.response.let {
-                    it.statusCode = HttpStatus.BAD_REQUEST
-                    it.headers.contentType = MediaType.APPLICATION_JSON
-                    val exMessage = ex.message
-                    if (exMessage == null) {
-                        it.writeWith(Mono.empty())
-                    } else {
-                        val response = it.bufferFactory().wrap(errorMessage(exMessage))
+    override fun handle(exchange: ServerWebExchange, ex: Throwable): Mono<Void> {
+        return mono {
+            val mono = when (ex) {
+                is IllegalArgumentException -> {
+                    logger.debug { ex.stackTraceToString() }
+                    exchange.response.let {
+                        it.statusCode = HttpStatus.BAD_REQUEST
+                        it.headers.contentType = MediaType.APPLICATION_JSON
+                        val exMessage = ex.message
+                        if (exMessage == null) {
+                            it.writeWith(Mono.empty())
+                        } else {
+                            val response = it.bufferFactory().wrap(errorMessage(exMessage))
+                            it.writeWith(response.toMono())
+                        }
+                    }
+                }
+
+                else -> {
+                    exchange.response.let {
+                        logger.error(ex.stackTraceToString())
+                        it.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
+                        it.headers.contentType = MediaType.APPLICATION_JSON
+                        val response = it.bufferFactory().wrap(internalServerError)
                         it.writeWith(response.toMono())
                     }
                 }
             }
-
-            else -> {
-                exchange.response.let {
-                    logger.error(ex.stackTraceToString())
-                    it.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
-                    it.headers.contentType = MediaType.APPLICATION_JSON
-                    val response = it.bufferFactory().wrap(internalServerError)
-                    it.writeWith(response.toMono())
-                }
-            }
+            mono.awaitSingle()
         }
-    }.then()
+    }
 }
 
 private fun <T : Any> T?.toMono(): Mono<T> = Mono.justOrEmpty(this)
@@ -64,6 +68,6 @@ private val internalServerError: ByteArray =
  * A helper class to represent error-messages in Json format.
  */
 @Serializable
-private data class ErrorMessage(val error: String)
+data class ErrorMessage(val error: String)
 
 private fun ErrorMessage.encodeToJson(): String = Json.encodeToString(this)
