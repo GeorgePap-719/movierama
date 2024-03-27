@@ -1,13 +1,17 @@
 package org.example.interviewtemplate
 
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.serialization.Serializable
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
+import org.springframework.data.r2dbc.core.delete
 import org.springframework.r2dbc.core.DatabaseClient
+import org.springframework.r2dbc.core.await
 import org.springframework.r2dbc.core.awaitSingle
 import org.springframework.r2dbc.core.bind
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.bodyValueAndAwait
@@ -39,6 +43,7 @@ data class User(val id: Int, val name: String, val lastName: String, val phone: 
 @Service
 class UserService(private val userRepository: UserRepository) {
 
+    @Transactional
     suspend fun register(input: RegisterUser): User {
         val user = UserEntity(
             name = input.name,
@@ -89,6 +94,16 @@ class UserRepository(private val template: R2dbcEntityTemplate) {
         }
         fetchSpec.awaitSingle()
         return checkNotNull(id)
+    }
+
+    // Mostly for helping in testing.
+    suspend fun deleteAll(): Int {
+        logger.debug { "Deleting all users." }
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "DELETE FROM template.users"
+        }
+        return spec.fetch().rowsUpdated().awaitSingle().toInt()
     }
 }
 
