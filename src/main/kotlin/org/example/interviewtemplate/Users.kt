@@ -125,5 +125,4 @@ class UserRepository(private val template: R2dbcEntityTemplate) {
     }
 }
 
-@Serializable
 data class UserEntity(val id: Int = 0, val name: String, val lastName: String, val phone: String)
