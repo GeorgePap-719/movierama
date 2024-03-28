@@ -20,14 +20,14 @@ class UserHandler(private val service: UserService) {
     private val logger = logger()
 
     suspend fun register(request: ServerRequest): ServerResponse {
-        logger.info("request: api/register")
+        logger.info("request: api/users")
         val body = request.awaitReceive<RegisterUser>()
         val newUser = service.register(body)
         return ServerResponse.ok().bodyValueAndAwait(newUser)
     }
 
     suspend fun findById(request: ServerRequest): ServerResponse {
-        logger.info("request: api/user/id")
+        logger.info("request: api/users/id")
         val idAsString = request.pathVariableOrNull("id")
         requireNotNull(idAsString) { "Target id is missing from path." }
         val id = idAsString.toIntOrNull()

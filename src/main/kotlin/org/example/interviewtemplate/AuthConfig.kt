@@ -9,9 +9,9 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.config.web.server.invoke
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
+import org.springframework.security.core.userdetails.User
 import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher
-import org.springframework.security.core.userdetails.User
 
 
 @Configuration
@@ -21,7 +21,7 @@ class AuthConfig {
     @Bean
     fun apiHttpSecurity(http: ServerHttpSecurity): SecurityWebFilterChain {
         return http {
-            securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/user/**"))
+            securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/users/{id}"))
             authorizeExchange {
                 authorize(anyExchange, authenticated)
             }

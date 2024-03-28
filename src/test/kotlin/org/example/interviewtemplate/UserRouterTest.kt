@@ -13,7 +13,6 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
 import kotlin.test.assertEquals
-import kotlin.test.assertSame
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -38,7 +37,7 @@ class UserRouterTest(
     fun testRegister() = runBlocking {
         val user = RegisterUser("george", "pap", "6923")
         val response = webClient.post()
-            .uri("$userApiUrl/register")
+            .uri("$userApiUrl/users")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
@@ -53,7 +52,7 @@ class UserRouterTest(
     fun testRegisterBadRequest() = runBlocking {
         val user = BadRegisterUser("george")
         val response = webClient.post()
-            .uri("$userApiUrl/register")
+            .uri("$userApiUrl/users")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
@@ -70,10 +69,9 @@ class UserRouterTest(
     fun testFindUserById() = runBlocking {
         val id = 7
         webClient.get()
-            .uri("$userApiUrl/user/$id")
+            .uri("$userApiUrl/users/$id")
             .accept(MediaType.APPLICATION_JSON)
             .awaitExchange {
-                println(it.statusCode())
                 assert(it.statusCode().value() == 200)
                 val actualUser = it.awaitBody<User>()
                 val expectedUser = User(7, "george", "pap", "6923")
