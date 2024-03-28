@@ -86,12 +86,12 @@ class UserRepository(private val template: R2dbcEntityTemplate) {
             .bind<String>(0, input.name)
             .bind<String>(1, input.lastName)
             .bind<String>(2, input.phone)
-        val generatedId = returnGeneratedId(spec)
+        val generatedId = saveAndReturnGeneratedId(spec)
         val newUser = input.copy(id = generatedId)
         return newUser
     }
 
-    private suspend fun returnGeneratedId(spec: DatabaseClient.GenericExecuteSpec): Int {
+    private suspend fun saveAndReturnGeneratedId(spec: DatabaseClient.GenericExecuteSpec): Int {
         // By default, the behavior of an insert/update statement in the database
         // does not return the inserted/updated rows.
         // It returns the number of inserted/updated rows.
