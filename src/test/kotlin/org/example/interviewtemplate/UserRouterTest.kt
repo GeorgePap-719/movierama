@@ -42,7 +42,7 @@ class UserRouterTest(
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
         response.awaitExchange {
-            assert(it.statusCode().value() == 200)
+            assert(it.statusCode().value() == 201)
             val newUser = it.awaitBody<User>()
             println("response:$newUser")
         }
