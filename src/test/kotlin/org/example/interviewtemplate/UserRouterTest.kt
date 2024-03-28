@@ -29,8 +29,9 @@ class UserRouterTest(
 
     @AfterEach
     fun afterEach(): Unit = runBlocking {
-//        val rows = userRepository.deleteAll()
-//        println("rows deleted:$rows")
+        // Uncomment below lines to clean up db after each test.
+        // val rows = userRepository.deleteAll()
+        // println("rows deleted:$rows")
     }
 
     @Test
