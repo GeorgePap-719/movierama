@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
@@ -65,6 +66,7 @@ class UserRouterTest(
     data class BadRegisterUser(val name: String)
 
     @Test
+    @WithMockUser
     fun testFindUserById() = runBlocking {
         val id = 7
         webClient.get()
