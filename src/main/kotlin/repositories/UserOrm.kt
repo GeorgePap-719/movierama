@@ -1,5 +1,6 @@
-package org.example.interviewtemplate
+package org.example.interviewtemplate.repositories
 
+import org.example.interviewtemplate.entities.UserEntity
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.awaitSingle
 

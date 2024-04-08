@@ -1,4 +1,4 @@
-package org.example.interviewtemplate
+package org.example.interviewtemplate.api
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

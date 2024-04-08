@@ -1,6 +1,10 @@
 package org.example.interviewtemplate
 
 import kotlinx.coroutines.runBlocking
+import org.example.interviewtemplate.api.ErrorMessage
+import org.example.interviewtemplate.dto.RegisterUser
+import org.example.interviewtemplate.dto.User
+import org.example.interviewtemplate.repositories.UserRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance

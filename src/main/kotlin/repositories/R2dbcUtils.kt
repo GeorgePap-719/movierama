@@ -1,4 +1,4 @@
-package org.example.interviewtemplate
+package org.example.interviewtemplate.repositories
 
 import io.r2dbc.spi.Row
 import org.springframework.data.r2dbc.mapping.OutboundRow
