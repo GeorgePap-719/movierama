@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository
 interface UserRepository {
     suspend fun save(input: UserEntity): UserEntity
     suspend fun findById(target: Int): UserEntity?
+    suspend fun findByName(target: String): UserEntity?
     suspend fun deleteAll(): Int
 }
 
@@ -55,6 +56,10 @@ class UserRepositoryImpl(private val template: R2dbcEntityTemplate) : UserReposi
             "SELECT * FROM template.users where id=$target"
         }
         return mapToUserEntity(spec)
+    }
+
+    override suspend fun findByName(target: String): UserEntity? {
+        TODO("Not yet implemented")
     }
 
     // Mostly for helping in testing.

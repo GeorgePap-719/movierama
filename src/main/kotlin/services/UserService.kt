@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 interface UserService {
     suspend fun register(input: RegisterUser): User
     suspend fun findById(target: Int): User?
+    suspend fun findByName(target: String): User?
 }
 
 @Service
@@ -38,5 +39,9 @@ class UserServiceImpl(
     override suspend fun findById(target: Int): User? {
         require(target > 0) { "Ids can only be positive, but got:$target." }
         return userRepository.findById(target)?.toUser()
+    }
+
+    override suspend fun findByName(target: String): User? {
+        TODO("Not yet implemented")
     }
 }

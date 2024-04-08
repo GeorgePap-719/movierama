@@ -31,6 +31,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.8.1-Beta")
     implementation("com.mysql:mysql-connector-j:8.2.0")
     implementation("io.asyncer:r2dbc-mysql:1.1.0")
+    implementation("com.nimbusds:nimbus-jose-jwt:9.37")
     // -- testing --
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
