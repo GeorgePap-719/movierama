@@ -3,12 +3,23 @@ package org.example.interviewtemplate.api
 import org.example.interviewtemplate.dto.RegisterUser
 import org.example.interviewtemplate.services.UserService
 import org.example.interviewtemplate.util.logger
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.ServerResponse
-import org.springframework.web.reactive.function.server.bodyValueAndAwait
-import org.springframework.web.reactive.function.server.buildAndAwait
-import java.net.URI
+import org.springframework.web.reactive.function.server.*
+
+@Configuration
+class UserRouter(private val userHandler: UserHandler) {
+
+    @Bean
+    fun userRoutes() = coRouter {
+        accept(MediaType.APPLICATION_JSON).nest {
+            POST("api/users", userHandler::register)
+            GET("api/users/{id}", userHandler::findById)
+        }
+    }
+}
 
 @Component
 class UserHandler(private val service: UserService) {
@@ -18,8 +29,9 @@ class UserHandler(private val service: UserService) {
         logger.info("request: api/users")
         val body = request.awaitReceive<RegisterUser>()
         val newUser = service.register(body)
-        return ServerResponse.created(URI.create("api/users/${newUser.id}"))
-            .bodyValueAndAwait(newUser)
+        //TODO:
+//        return ServerResponse.created(URI.create("api/users/${newUser.id}"))
+        return ServerResponse.status(201).bodyValueAndAwait(newUser)
     }
 
     suspend fun findById(request: ServerRequest): ServerResponse {

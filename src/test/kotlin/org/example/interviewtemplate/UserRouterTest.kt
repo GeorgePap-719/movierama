@@ -40,7 +40,7 @@ class UserRouterTest(
 
     @Test
     fun testRegister() = runBlocking {
-        val user = RegisterUser("george", "pap", "6923")
+        val user = RegisterUser("george", "pap")
         val response = webClient.post()
             .uri("$userApiUrl/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -79,7 +79,7 @@ class UserRouterTest(
             .awaitExchange {
                 assert(it.statusCode().value() == 200)
                 val actualUser = it.awaitBody<User>()
-                val expectedUser = User(7, "george", "pap", "6923")
+                val expectedUser = User("sds", "george")
                 assertEquals(expectedUser, actualUser)
             }
     }

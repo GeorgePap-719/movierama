@@ -24,7 +24,7 @@ class AuthConfig {
             authorizeExchange {
                 authorize(anyExchange, authenticated)
             }
-            httpBasic {  }
+            httpBasic { }
         }
     }
 

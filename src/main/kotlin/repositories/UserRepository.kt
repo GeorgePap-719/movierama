@@ -10,20 +10,25 @@ import org.springframework.r2dbc.core.awaitSingle
 import org.springframework.r2dbc.core.bind
 import org.springframework.stereotype.Repository
 
+interface UserRepository {
+    suspend fun save(input: UserEntity): UserEntity
+    suspend fun findById(target: Int): UserEntity?
+    suspend fun deleteAll(): Int
+}
+
 @Repository
-class UserRepository(private val template: R2dbcEntityTemplate) {
+class UserRepositoryImpl(private val template: R2dbcEntityTemplate) : UserRepository {
     private val logger = logger()
 
-    suspend fun save(input: UserEntity): UserEntity {
+    override suspend fun save(input: UserEntity): UserEntity {
         check(input.id == 0) { "All ids should be zero, they are auto-increased by db." }
         logger.debug { "Saving user:$input" }
         val spec = template.databaseClient.sql {
             //language=MySQL
-            "INSERT INTO template.users (name, last_name, phone) values (?, ?, ?)"
+            "INSERT INTO movierama.users (name, password) values (?, ?)"
         }
             .bind<String>(0, input.name)
-            .bind<String>(1, input.lastName)
-            .bind<String>(2, input.phone)
+            .bind<String>(1, input.encryptedPassword)
         val generatedId = saveAndReturnGeneratedId(spec)
         val newUser = input.copy(id = generatedId)
         return newUser
@@ -44,7 +49,7 @@ class UserRepository(private val template: R2dbcEntityTemplate) {
         return checkNotNull(id)
     }
 
-    suspend fun findById(target: Int): UserEntity? {
+    override suspend fun findById(target: Int): UserEntity? {
         val spec = template.databaseClient.sql {
             //language=MySQL
             "SELECT * FROM template.users where id=$target"
@@ -53,11 +58,11 @@ class UserRepository(private val template: R2dbcEntityTemplate) {
     }
 
     // Mostly for helping in testing.
-    suspend fun deleteAll(): Int {
+    override suspend fun deleteAll(): Int {
         logger.debug { "Deleting all users." }
         val spec = template.databaseClient.sql {
             //language=MySQL
-            "DELETE FROM template.users"
+            "DELETE FROM movierama.users"
         }
         return spec.fetch().rowsUpdated().awaitSingle().toInt()
     }

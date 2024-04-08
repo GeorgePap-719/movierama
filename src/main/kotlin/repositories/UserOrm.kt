@@ -42,8 +42,7 @@ private class UserBuilder {
         return UserEntity(
             id = id,
             name = name,
-            lastName = lastName,
-            phone = phone
+            encryptedPassword = lastName,
         )
     }
 }
