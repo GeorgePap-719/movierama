@@ -6,6 +6,9 @@ import org.springframework.web.reactive.function.server.bodyToMono
 import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 
+/**
+ * Returns the path variable with the given name, or `null` if it is not present.
+ */
 fun ServerRequest.pathVariableOrNull(name: String): String? {
     val vars = pathVariables()
     return vars[name]
