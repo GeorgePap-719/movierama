@@ -15,12 +15,13 @@ import kotlin.test.Test
 
 class SimpleTest {
 
+    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun test() {
         val random = SecureRandom()
-        val sharedSecret = ByteArray(128)
+        val sharedSecret = ByteArray(256)
         random.nextBytes(sharedSecret)
-        println(sharedSecret)
+        println(sharedSecret.toHexString())
         // Create HMAC signer
 
         // Prepare JWT with claims set
