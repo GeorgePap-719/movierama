@@ -7,13 +7,12 @@ import org.springframework.r2dbc.core.awaitSingle
 suspend fun mapToUserEntity(spec: DatabaseClient.GenericExecuteSpec): UserEntity? {
     return buildUser {
         val fetchSpec = spec.map { row, metadata ->
-            check(metadata.columnMetadatas.size == 4) {
+            check(metadata.columnMetadatas.size == 3) {
                 "Size should be equal of `UserEntity` fields, but got:${metadata.columnMetadatas.size}."
             }
             id = row.getColumn<Int>("id")
             name = row.getColumn<String>("name")
-            lastName = row.getColumn<String>("last_name")
-            phone = row.getColumn<String>("phone")
+            password = row.getColumn<String>("password")
         }
         fetchSpec.awaitSingle()
     }
@@ -28,21 +27,19 @@ private inline fun buildUser(action: UserBuilder.() -> Unit): UserEntity? {
 private class UserBuilder {
     var id: Int? = null
     var name: String? = null
-    var lastName: String? = null
-    var phone: String? = null
+    var password: String? = null
 
-    val isEmpty: Boolean get() = id == null && name == null && lastName == null && phone == null
+    val isEmpty: Boolean get() = id == null && name == null && password == null
 
     fun build(): UserEntity? {
         if (isEmpty) return null
         val id = requireNotNull(id)
         val name = requireNotNull(name)
-        val lastName = requireNotNull(lastName)
-        val phone = requireNotNull(phone)
+        val password = requireNotNull(password)
         return UserEntity(
             id = id,
             name = name,
-            encryptedPassword = lastName,
+            encryptedPassword = password,
         )
     }
 }

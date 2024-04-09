@@ -16,7 +16,7 @@ class UserRouter(private val userHandler: UserHandler) {
     fun userRoutes() = coRouter {
         accept(MediaType.APPLICATION_JSON).nest {
             POST("api/users", userHandler::register)
-            GET("api/users/{id}", userHandler::findById)
+            GET("api/users/{name}", userHandler::findByName)
         }
     }
 }
@@ -34,13 +34,11 @@ class UserHandler(private val service: UserService) {
         return ServerResponse.status(201).bodyValueAndAwait(newUser)
     }
 
-    suspend fun findById(request: ServerRequest): ServerResponse {
-        logger.info("request: api/users/id")
-        val idAsString = request.pathVariableOrNull("id")
-        requireNotNull(idAsString) { "Target id is missing from path." }
-        val id = idAsString.toIntOrNull()
-            ?: throw IllegalArgumentException("Id must be a positive int, but got:$idAsString.")
-        val user = service.findById(id) ?: return ServerResponse.notFound().buildAndAwait()
+    suspend fun findByName(request: ServerRequest): ServerResponse {
+        logger.info("request: api/users/name")
+        val name = request.pathVariableOrNull("name")
+        requireNotNull(name) { "Target name is missing from path." }
+        val user = service.findByName(name) ?: return ServerResponse.notFound().buildAndAwait()
         return ServerResponse.ok().bodyValueAndAwait(user)
     }
 }

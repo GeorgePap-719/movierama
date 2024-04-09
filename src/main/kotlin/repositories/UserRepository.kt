@@ -53,13 +53,17 @@ class UserRepositoryImpl(private val template: R2dbcEntityTemplate) : UserReposi
     override suspend fun findById(target: Int): UserEntity? {
         val spec = template.databaseClient.sql {
             //language=MySQL
-            "SELECT * FROM template.users where id=$target"
+            "SELECT * FROM movierama.users where id=$target"
         }
         return mapToUserEntity(spec)
     }
 
     override suspend fun findByName(target: String): UserEntity? {
-        TODO("Not yet implemented")
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "SELECT * FROM movierama.users where name='$target'"
+        }
+        return mapToUserEntity(spec)
     }
 
     // Mostly for helping in testing.

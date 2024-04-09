@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional
 
 interface UserService {
     suspend fun register(input: RegisterUser): User
-    suspend fun findById(target: Int): User?
     suspend fun findByName(target: String): User?
 }
 
@@ -32,16 +31,12 @@ class UserServiceImpl(
         return userRepository.save(user).toUser()
     }
 
+    override suspend fun findByName(target: String): User? {
+        require(target.isNotBlank()) { "Target name is blank." }
+        return userRepository.findByName(target)?.toUser()
+    }
+
     private fun UserEntity.toUser(): User {
         return User(name, encryptedPassword)
-    }
-
-    override suspend fun findById(target: Int): User? {
-        require(target > 0) { "Ids can only be positive, but got:$target." }
-        return userRepository.findById(target)?.toUser()
-    }
-
-    override suspend fun findByName(target: String): User? {
-        TODO("Not yet implemented")
     }
 }
