@@ -15,7 +15,8 @@ class UserRouter(private val userHandler: UserHandler) {
     @Bean
     fun userRoutes() = coRouter {
         accept(MediaType.APPLICATION_JSON).nest {
-            POST("api/users", userHandler::register)
+            //TODO: move this to auth router.
+            POST("api/users/register", userHandler::register)
             GET("api/users/{name}", userHandler::findByName)
         }
     }

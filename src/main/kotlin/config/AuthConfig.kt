@@ -10,14 +10,16 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
-import org.springframework.security.config.web.server.invoke
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.web.server.SecurityWebFilterChain
 import reactor.core.publisher.Mono
+
 
 @Configuration
 @EnableWebFluxSecurity
@@ -32,17 +34,23 @@ class AuthConfig(
     @Order(Ordered.HIGHEST_PRECEDENCE)
     @Bean
     fun apiHttpSecurity(http: ServerHttpSecurity): SecurityWebFilterChain {
-        return http {
-//            securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/users/{id}"))
-            authorizeExchange {
-                authorize("/login", permitAll)
-                authorize(anyExchange, authenticated)
-            }
-            httpBasic {
-
-            }
-            formLogin { }
-        }
+        return http
+            .csrf { csrf -> csrf.disable() }
+            .authorizeExchange { auth ->
+                auth.pathMatchers("/login").permitAll()
+                auth.pathMatchers("api/users/register").permitAll()
+                auth.anyExchange().authenticated()
+            }.build()
+        // Note: this dsl is somewhere broken...
+//        return http {
+//            authorizeExchange {
+//                authorize(pathMatchers("/login", "/api/users/register"), permitAll)
+//                authorize(anyExchange, authenticated)
+//            }
+//            formLogin { }
+//
+//            httpBasic {  }
+//        }
     }
 
 
@@ -75,4 +83,10 @@ class UserDetailsImpl(
     override fun isAccountNonLocked(): Boolean = true
     override fun isCredentialsNonExpired(): Boolean = true
     override fun isEnabled(): Boolean = true
+}
+
+class AuthManager : ReactiveAuthenticationManager {
+    override fun authenticate(authentication: Authentication?): Mono<Authentication> {
+        TODO("Not yet implemented")
+    }
 }

@@ -43,11 +43,12 @@ class UserRouterTest(
     fun testRegister(): Unit = runBlocking {
         val user = RegisterUser("georgeAA", "pap")
         val response = webClient.post()
-            .uri("$userApiUrl/users")
+            .uri("$userApiUrl/users/register")
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
         response.awaitExchange {
+            println(it.statusCode().value())
             assert(it.statusCode().value() == 201)
             it.awaitBody<User>()
         }
