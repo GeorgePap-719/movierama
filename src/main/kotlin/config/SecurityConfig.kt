@@ -5,6 +5,6 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class SecurityConfig(
-// The hash to be used for generating and validating passwords.
+    // The hash to be used for generating and validating passwords.
     @Value("\${salt}") val salt: String
 )
