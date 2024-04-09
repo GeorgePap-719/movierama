@@ -1,6 +1,6 @@
 package org.example.interviewtemplate.api
 
-import org.example.interviewtemplate.dto.User
+import org.example.interviewtemplate.dto.LoginUser
 import org.example.interviewtemplate.services.AuthService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -22,7 +22,7 @@ class AuthRouter(private val authHandler: AuthHandler) {
 @Service
 class AuthHandler(private val service: AuthService) {
     suspend fun login(request: ServerRequest): ServerResponse {
-        val body = request.awaitReceive<User>()
+        val body = request.awaitReceive<LoginUser>()
         val user = service.login(body)
             ?: return ServerResponse.notFound().buildAndAwait()
         return ServerResponse.ok().bodyValueAndAwait(user)

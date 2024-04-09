@@ -5,6 +5,7 @@ import org.example.interviewtemplate.dto.RegisterUser
 import org.example.interviewtemplate.dto.User
 import org.example.interviewtemplate.entities.UserEntity
 import org.example.interviewtemplate.repositories.UserRepository
+import org.springframework.dao.DuplicateKeyException
 import org.springframework.security.crypto.bcrypt.BCrypt
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,7 +29,15 @@ class UserServiceImpl(
             name = input.name,
             encryptedPassword = encryptedPassword,
         )
-        return userRepository.save(user).toUser()
+        return trySave(user).toUser()
+    }
+
+    private suspend fun trySave(input: UserEntity): UserEntity {
+        try {
+            return userRepository.save(input)
+        } catch (e: DuplicateKeyException) {
+            throw IllegalArgumentException("The user with name:${input.name} already exists.")
+        }
     }
 
     override suspend fun findByName(target: String): User? {
@@ -37,6 +46,6 @@ class UserServiceImpl(
     }
 
     private fun UserEntity.toUser(): User {
-        return User(name, encryptedPassword)
+        return User(name)
     }
 }

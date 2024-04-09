@@ -2,7 +2,6 @@ package org.example.interviewtemplate
 
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
-import org.example.interviewtemplate.api.ErrorMessage
 import org.example.interviewtemplate.dto.RegisterUser
 import org.example.interviewtemplate.dto.User
 import org.example.interviewtemplate.repositories.UserRepository
@@ -37,14 +36,12 @@ class UserRouterTest(
 
     @AfterEach
     fun afterEach(): Unit = runBlocking {
-        // Uncomment below lines to clean up db after each test.
-        // val rows = userRepository.deleteAll()
-        // println("rows deleted:$rows")
+        userRepository.deleteAll()
     }
 
     @Test
-    fun testRegister() = runBlocking {
-        val user = RegisterUser("george", "pap")
+    fun testRegister(): Unit = runBlocking {
+        val user = RegisterUser("georgeAA", "pap")
         val response = webClient.post()
             .uri("$userApiUrl/users")
             .contentType(MediaType.APPLICATION_JSON)
@@ -52,9 +49,29 @@ class UserRouterTest(
             .bodyValue(user)
         response.awaitExchange {
             assert(it.statusCode().value() == 201)
-            val newUser = it.awaitBody<User>()
-            println("response:$newUser")
+            it.awaitBody<User>()
         }
+    }
+
+    @Test
+    fun testRegisterDuplicates(): Unit = runBlocking {
+        val user = RegisterUser("george", "pap")
+        webClient.post()
+            .uri("$userApiUrl/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(user)
+            .retrieve()
+            .awaitBody<User>()
+        webClient.post()
+            .uri("$userApiUrl/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(user)
+            .awaitExchange {
+                assert(it.statusCode().value() == 400)
+                println(it.awaitBody<String>())
+            }
     }
 
     @Test
@@ -67,7 +84,6 @@ class UserRouterTest(
             .bodyValue(user)
         response.awaitExchange {
             assert(it.statusCode().is4xxClientError)
-            println(it.awaitBody<ErrorMessage>())
         }
     }
 

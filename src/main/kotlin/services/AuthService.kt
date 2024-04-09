@@ -8,7 +8,7 @@ import com.nimbusds.jose.crypto.MACVerifier
 import com.nimbusds.jwt.JWTClaimsSet
 import com.nimbusds.jwt.SignedJWT
 import org.example.interviewtemplate.dto.LoggedUser
-import org.example.interviewtemplate.dto.User
+import org.example.interviewtemplate.dto.LoginUser
 import org.example.interviewtemplate.repositories.UserRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.bcrypt.BCrypt.checkpw
@@ -17,7 +17,7 @@ import java.text.ParseException
 import java.util.*
 
 interface AuthService {
-    suspend fun login(input: User): LoggedUser?
+    suspend fun login(input: LoginUser): LoggedUser?
     fun authorize(user: LoggedUser)
 }
 
@@ -29,7 +29,7 @@ class AuthServiceImpl(
 ) : AuthService {
     private val sharedKey = _sharedKey.toByteArray()
 
-    override suspend fun login(input: User): LoggedUser? {
+    override suspend fun login(input: LoginUser): LoggedUser? {
         val user = userRepository.findByName(input.name) ?: return null
         if (!checkpw(input.password, user.encryptedPassword)) throw AuthorizationException()
         val token = createJwt(sharedKey)
