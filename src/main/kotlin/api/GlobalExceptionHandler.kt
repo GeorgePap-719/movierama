@@ -5,6 +5,7 @@ import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.example.interviewtemplate.services.AuthenticationException
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
 import org.springframework.core.annotation.Order
@@ -43,6 +44,16 @@ class GlobalExceptionHandler : WebExceptionHandler {
                     }
                 }
 
+                is AuthenticationException -> {
+                    logger.debug { ex.stackTraceToString() }
+                    exchange.response.let {
+                        it.statusCode = HttpStatus.UNAUTHORIZED
+                        it.headers.contentType = MediaType.APPLICATION_JSON
+                        val response = it.bufferFactory().wrap(unauthorizedError)
+                        it.writeWith(response.toMono())
+                    }
+                }
+
                 else -> {
                     exchange.response.let {
                         logger.error(ex.stackTraceToString())
@@ -65,6 +76,9 @@ private fun errorMessage(error: String): ByteArray =
 
 private val internalServerError: ByteArray =
     ErrorMessage("internal server-error").encodeToJson().toByteArray()
+
+private val unauthorizedError: ByteArray =
+    ErrorMessage("Unauthorized access.").encodeToJson().toByteArray()
 
 /**
  * A helper class to represent error-messages in Json format.
