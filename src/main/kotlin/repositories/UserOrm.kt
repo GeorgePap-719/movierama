@@ -2,7 +2,7 @@ package org.example.interviewtemplate.repositories
 
 import org.example.interviewtemplate.entities.UserEntity
 import org.springframework.r2dbc.core.DatabaseClient
-import org.springframework.r2dbc.core.awaitSingle
+import org.springframework.r2dbc.core.awaitSingleOrNull
 
 suspend fun mapToUserEntity(spec: DatabaseClient.GenericExecuteSpec): UserEntity? {
     return buildUser {
@@ -14,7 +14,7 @@ suspend fun mapToUserEntity(spec: DatabaseClient.GenericExecuteSpec): UserEntity
             name = row.getColumn<String>("name")
             password = row.getColumn<String>("password")
         }
-        fetchSpec.awaitSingle()
+        fetchSpec.awaitSingleOrNull()
     }
 }
 

@@ -14,7 +14,7 @@ class AuthRouter(private val authHandler: AuthHandler) {
     @Bean
     fun authRoutes() = coRouter {
         accept(MediaType.APPLICATION_JSON).nest {
-            POST("api/users/login", authHandler::login)
+            POST("/login", authHandler::login)
         }
     }
 }
