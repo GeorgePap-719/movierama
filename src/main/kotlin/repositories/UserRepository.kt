@@ -1,6 +1,5 @@
 package org.example.interviewtemplate.repositories
 
-import kotlinx.coroutines.reactor.awaitSingle
 import org.example.interviewtemplate.entities.UserEntity
 import org.example.interviewtemplate.repositories.orm.mapToUserEntity
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
@@ -8,6 +7,7 @@ import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.r2dbc.core.DatabaseClient
+import org.springframework.r2dbc.core.awaitRowsUpdated
 import org.springframework.r2dbc.core.bind
 import org.springframework.stereotype.Repository
 
@@ -59,6 +59,6 @@ class UserRepositoryImpl(private val template: R2dbcEntityTemplate) : UserReposi
             //language=MySQL
             "DELETE FROM movierama.users"
         }
-        return spec.fetch().rowsUpdated().awaitSingle().toInt()
+        return spec.fetch().awaitRowsUpdated().toInt()
     }
 }

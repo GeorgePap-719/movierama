@@ -1,13 +1,12 @@
 package org.example.interviewtemplate.repositories
 
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.reactive.asFlow
 import org.example.interviewtemplate.entities.MovieOpinionEntity
 import org.example.interviewtemplate.repositories.orm.mapToMovieOpinionEntities
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
+import org.springframework.r2dbc.core.awaitRowsUpdated
 import org.springframework.r2dbc.core.bind
 import org.springframework.stereotype.Repository
 
@@ -15,6 +14,7 @@ interface MovieOpinionRepository {
     suspend fun save(input: MovieOpinionEntity): MovieOpinionEntity
     suspend fun updateOpinion(input: MovieOpinionEntity): Int
     suspend fun findAllOpinionsByUser(target: Int): List<MovieOpinionEntity>
+    suspend fun deleteAll(): Int
 }
 
 @Repository
@@ -50,11 +50,11 @@ class MovieOpinionRepositoryImpl(
                 where user_id=${input.userId} and movie_id=${input.movieId}
                 """.trimIndent()
         }
-        val updatedRows = spec.fetch().all().asFlow().toList().size
+        val updatedRows = spec.fetch().awaitRowsUpdated()
         if (updatedRows > 1) {
             throw IllegalStateException("Expected rows to be affected is one but updated:$updatedRows.")
         }
-        return updatedRows
+        return updatedRows.toInt()
     }
 
     override suspend fun findAllOpinionsByUser(target: Int): List<MovieOpinionEntity> {
@@ -63,6 +63,15 @@ class MovieOpinionRepositoryImpl(
             "SELECT * FROM movierama.opinions where user_id=$target"
         }
         return mapToMovieOpinionEntities(spec)
+    }
+
+    override suspend fun deleteAll(): Int {
+        logger.debug { "Deleting all opinions." }
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "DELETE FROM movierama.opinions"
+        }
+        return spec.fetch().awaitRowsUpdated().toInt()
     }
 }
 

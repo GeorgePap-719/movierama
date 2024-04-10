@@ -1,11 +1,13 @@
 package org.example.interviewtemplate.repositories
 
+import org.example.interviewtemplate.dto.Opinion
 import org.example.interviewtemplate.entities.MovieEntity
 import org.example.interviewtemplate.repositories.orm.mapToMovieEntity
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
+import org.springframework.r2dbc.core.awaitRowsUpdated
 import org.springframework.r2dbc.core.bind
 import org.springframework.stereotype.Repository
 
@@ -13,9 +15,8 @@ interface MovieRepository {
     suspend fun save(input: MovieEntity): MovieEntity
     suspend fun findByTitle(target: String): MovieEntity?
     suspend fun findAll(): List<MovieEntity>
-    suspend fun updateLikesForMovie(): Int
-    suspend fun updateHatesForMovie(): Int
-    suspend fun updateOpinionForMovie(): Int
+    suspend fun postOpinionForMovie(target: Int, newOpinion: Opinion): Int
+    suspend fun updateOpinionForMovie(target: Int, newOpinion: Opinion): Int
     suspend fun deleteAll(): Int
 }
 
@@ -55,19 +56,74 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
         TODO("Not yet implemented")
     }
 
-    override suspend fun updateLikesForMovie(): Int {
-        TODO("Not yet implemented")
+    override suspend fun postOpinionForMovie(target: Int, newOpinion: Opinion): Int {
+        val spec = when (newOpinion) {
+            Opinion.LIKE -> {
+                template.databaseClient.sql {
+                    //language=MySQL
+                    """
+                UPDATE movierama.movies 
+                set likes=likes + 1 
+                where id=$target
+                """.trimIndent()
+                }
+            }
+
+            Opinion.HATE -> {
+                template.databaseClient.sql {
+                    //language=MySQL
+                    """
+                UPDATE movierama.movies 
+                set hates=hates + 1
+                where id=$target
+                """.trimIndent()
+                }
+            }
+        }
+        val updatedRows = spec.fetch().awaitRowsUpdated()
+        if (updatedRows > 1) {
+            throw IllegalStateException("Expected rows to be affected is one but updated:$updatedRows.")
+        }
+        return updatedRows.toInt()
     }
 
-    override suspend fun updateHatesForMovie(): Int {
-        TODO("Not yet implemented")
-    }
+    override suspend fun updateOpinionForMovie(target: Int, newOpinion: Opinion): Int {
+        val spec = when (newOpinion) {
+            Opinion.LIKE -> {
+                template.databaseClient.sql {
+                    //language=MySQL
+                    """
+                UPDATE movierama.movies 
+                set likes=likes + 1, hates=hates - 1 
+                where id=$target
+                """.trimIndent()
+                }
+            }
 
-    override suspend fun updateOpinionForMovie(): Int {
-        TODO("Not yet implemented")
+            Opinion.HATE -> {
+                template.databaseClient.sql {
+                    //language=MySQL
+                    """
+                UPDATE movierama.movies 
+                set likes=likes - 1, hates=hates + 1
+                where id=$target
+                """.trimIndent()
+                }
+            }
+        }
+        val updatedRows = spec.fetch().awaitRowsUpdated()
+        if (updatedRows > 1) {
+            throw IllegalStateException("Expected rows to be affected is one but updated:$updatedRows.")
+        }
+        return updatedRows.toInt()
     }
 
     override suspend fun deleteAll(): Int {
-        TODO("Not yet implemented")
+        logger.debug { "Deleting all movies." }
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "DELETE FROM movierama.movies"
+        }
+        return spec.fetch().awaitRowsUpdated().toInt()
     }
 }
