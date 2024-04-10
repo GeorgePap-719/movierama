@@ -11,12 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
-import kotlin.random.Random
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -30,7 +29,7 @@ class UserRouterTest(
 ) {
     private val userApiUrl = defaultUrl(port)
 
-    private val registerUriApi = "$userApiUrl/users/register"
+    private val registerUriApi = "$userApiUrl/auth/register"
 
     @AfterEach
     fun afterEach(): Unit = runBlocking {
@@ -39,7 +38,7 @@ class UserRouterTest(
 
     @Test
     fun testRegister(): Unit = runBlocking {
-        val user = RegisterUser("georgeAA", "pap")
+        val user = RegisterUser(randomName(), randomPass())
         val response = webClient.post()
             .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
@@ -47,20 +46,18 @@ class UserRouterTest(
             .bodyValue(user)
         response.awaitExchange {
             assert(it.statusCode().value() == 201)
-            it.awaitBody<User>()
         }
     }
 
     @Test
     fun testRegisterDuplicates(): Unit = runBlocking {
-        val user = RegisterUser("george", "pap")
+        val user = RegisterUser(randomName(), randomPass())
         webClient.post()
             .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
-            .retrieve()
-            .awaitBody<User>()
+            .awaitRetrieveEntity<User>()
         webClient.post()
             .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
@@ -73,7 +70,7 @@ class UserRouterTest(
 
     @Test
     fun testRegisterBadRequest() = runBlocking {
-        val user = BadRegisterUser("george")
+        val user = BadRegisterUser(randomName())
         val response = webClient.post()
             .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
@@ -87,11 +84,9 @@ class UserRouterTest(
     data class BadRegisterUser(val name: String)
 
     @Test
+    @WithMockUser
     fun testFindUserByName() = runBlocking {
-        // Randomize name to avoid conflicts with concurrent calls in db,
-        // since `name` column is unique.
-        val name = "george" + Random.nextInt(100)
-        val user = RegisterUser(name, Random.nextInt(100).toString())
+        val user = RegisterUser(randomName(), randomPass())
         val response = webClient.post()
             .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
@@ -99,15 +94,14 @@ class UserRouterTest(
             .bodyValue(user)
             .awaitRetrieveEntity<User>()
         assert(response.statusCode.value() == 201)
-        val registeredUser = response.body
-        assertNotNull(registeredUser)
         webClient.get()
-            .uri("$userApiUrl/users/${registeredUser.name}")
+            .uri("$userApiUrl/users/${user.name}")
             .accept(MediaType.APPLICATION_JSON)
             .awaitExchange {
                 assert(it.statusCode().value() == 200)
-                val actualUser = it.awaitBody<User>()
-                assertEquals(registeredUser, actualUser)
+                val actual = it.awaitBody<User>()
+                val expected = User(user.name)
+                assertEquals(expected, actual)
             }
     }
 }

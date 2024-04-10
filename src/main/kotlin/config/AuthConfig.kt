@@ -43,7 +43,7 @@ class AuthConfig(
             .csrf { csrf -> csrf.disable() }
             .authorizeExchange { auth ->
                 auth.pathMatchers("api/auth/login").permitAll()
-                auth.pathMatchers("api/users/register").permitAll()
+                auth.pathMatchers("api/auth/register").permitAll()
                 auth.anyExchange().access(AuthManager())
             }.build()
     }

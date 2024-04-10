@@ -1,9 +1,12 @@
 package org.example.interviewtemplate.dto
 
 import kotlinx.serialization.Serializable
+import org.example.interviewtemplate.entities.UserEntity
 
 @Serializable
 data class User(val name: String)
+
+fun UserEntity.toUser(): User = User(name)
 
 @Serializable
 data class RegisterUser(val name: String, val password: String) {
