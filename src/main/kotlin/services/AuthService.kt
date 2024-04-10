@@ -71,7 +71,7 @@ class AuthServiceImpl(
             .expirationTime(Date(Date().time + 60 * 1000))
             .build()
         val signedJwt = SignedJWT(JWSHeader(JWSAlgorithm.HS256), claimsSet)
-        // Apply the HMAC protection
+        // Apply the HMAC protection.
         signedJwt.sign(signer)
         // Serialize to compact form, produces something like
         // eyJhbGciOiJIUzI1NiJ9.SGVsbG8sIHdvcmxkIQ.onO9Ihudz3WkiauDO2Uhyuz0Y18UASXlSc1eS0NkWyA
