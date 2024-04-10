@@ -34,6 +34,8 @@ class UserRouterTest(
 
     private val userApiUrl = defaultUrl(port)
 
+    private val registerUriApi = "$userApiUrl/users/register"
+
     @AfterEach
     fun afterEach(): Unit = runBlocking {
         userRepository.deleteAll()
@@ -43,12 +45,11 @@ class UserRouterTest(
     fun testRegister(): Unit = runBlocking {
         val user = RegisterUser("georgeAA", "pap")
         val response = webClient.post()
-            .uri("$userApiUrl/users/register")
+            .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
         response.awaitExchange {
-            println(it.statusCode().value())
             assert(it.statusCode().value() == 201)
             it.awaitBody<User>()
         }
@@ -58,14 +59,14 @@ class UserRouterTest(
     fun testRegisterDuplicates(): Unit = runBlocking {
         val user = RegisterUser("george", "pap")
         webClient.post()
-            .uri("$userApiUrl/users")
+            .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
             .retrieve()
             .awaitBody<User>()
         webClient.post()
-            .uri("$userApiUrl/users")
+            .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
@@ -79,7 +80,7 @@ class UserRouterTest(
     fun testRegisterBadRequest() = runBlocking {
         val user = BadRegisterUser("george")
         val response = webClient.post()
-            .uri("$userApiUrl/users")
+            .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
@@ -98,7 +99,7 @@ class UserRouterTest(
         val name = "george" + Random.nextInt(100)
         val user = RegisterUser(name, Random.nextInt(100).toString())
         val response = webClient.post()
-            .uri("$userApiUrl/users")
+            .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)

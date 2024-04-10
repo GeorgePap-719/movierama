@@ -41,16 +41,6 @@ class AuthConfig(
                 auth.pathMatchers("api/users/register").permitAll()
                 auth.anyExchange().authenticated()
             }.build()
-        // Note: this dsl is somewhere broken...
-//        return http {
-//            authorizeExchange {
-//                authorize(pathMatchers("/login", "/api/users/register"), permitAll)
-//                authorize(anyExchange, authenticated)
-//            }
-//            formLogin { }
-//
-//            httpBasic {  }
-//        }
     }
 
 
