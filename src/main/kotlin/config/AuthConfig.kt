@@ -37,7 +37,7 @@ class AuthConfig(
         return http
             .csrf { csrf -> csrf.disable() }
             .authorizeExchange { auth ->
-                auth.pathMatchers("/login").permitAll()
+                auth.pathMatchers("/auth/login").permitAll()
                 auth.pathMatchers("api/users/register").permitAll()
                 auth.anyExchange().authenticated()
             }.build()
