@@ -27,7 +27,7 @@ class UserHandler(private val service: UserService) {
     suspend fun findByName(request: ServerRequest): ServerResponse {
         logger.info("request: api/users/name")
         val name = request.pathVariableOrNull("name")
-        requireNotNull(name) { "Target name is missing from path." }
+        requireNotNull(name) { "Name is missing from path." }
         val user = service.findByName(name) ?: return ServerResponse.notFound().buildAndAwait()
         return ServerResponse.ok().bodyValueAndAwait(user)
     }

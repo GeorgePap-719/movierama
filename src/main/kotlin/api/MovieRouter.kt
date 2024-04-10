@@ -1,6 +1,7 @@
 package org.example.interviewtemplate.api
 
 import org.example.interviewtemplate.api.utils.awaitReceive
+import org.example.interviewtemplate.api.utils.pathVariableOrNull
 import org.example.interviewtemplate.dto.MovieOpinion
 import org.example.interviewtemplate.dto.RegisterMovie
 import org.example.interviewtemplate.services.AuthenticationException
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
+import java.net.URI
 
 @Configuration
 class MovieRouter(private val movieHandler: MovieHandler) {
@@ -21,6 +23,7 @@ class MovieRouter(private val movieHandler: MovieHandler) {
             POST("api/movies", movieHandler::registerMovie)
             GET("api/movies/{title}", movieHandler::findMovieByTitle)
             POST("api/movies/opinion", movieHandler::postOpinion)
+            POST("api/movies/opinion/retract/", movieHandler::retractOpinion)
         }
     }
 }
@@ -34,22 +37,40 @@ class MovieHandler(private val movieService: MovieService) {
         val movie = request.awaitReceive<RegisterMovie>()
         val registeredMovie = movieService.register(movie)
         return ServerResponse
-            //TODO:.created()
-            .status(201)
+            .created(URI.create("api/movies/${movie.title}"))
             .bodyValueAndAwait(registeredMovie)
     }
 
     suspend fun findMovieByTitle(request: ServerRequest): ServerResponse {
         logger.info("request: api/movies/{title}")
-        TODO()
+        val title = request.pathVariableOrNull("title")
+        requireNotNull(title) { "Title is missing from path." }
+        val movie = movieService.findMovieByTitle(title)
+            ?: return ServerResponse.notFound().buildAndAwait()
+        return ServerResponse.ok().bodyValueAndAwait(movie)
     }
 
     suspend fun postOpinion(request: ServerRequest): ServerResponse {
         logger.info("request: api/movies/opinion")
         val movieOpinion = request.awaitReceive<MovieOpinion>()
-        val principal =
-            request.awaitPrincipal() ?: throw AuthenticationException("Principal is missing.")
+        val principal = request.awaitPrincipal()
+            ?: throw AuthenticationException("Principal is missing.")
+        if (principal.name.isNullOrBlank()) {
+            throw AuthenticationException("Username in principal is missing.")
+        }
+        movieService.postOpinion(principal.name, movieOpinion)
+        return ServerResponse.ok().buildAndAwait()
+    }
 
-        TODO()
+    suspend fun retractOpinion(request: ServerRequest): ServerResponse {
+        logger.info("request: api/movies/opinion/retract")
+        val movieOpinion = request.awaitReceive<MovieOpinion>()
+        val principal = request.awaitPrincipal()
+            ?: throw AuthenticationException("Principal is missing.")
+        if (principal.name.isNullOrBlank()) {
+            throw AuthenticationException("Username in principal is missing.")
+        }
+        movieService.removeOpinionForMovie(principal.name, movieOpinion)
+        return ServerResponse.ok().buildAndAwait()
     }
 }

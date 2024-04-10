@@ -17,6 +17,7 @@ interface MovieService {
     suspend fun register(input: RegisterMovie): Movie
     suspend fun postOpinion(username: String, movieOpinion: MovieOpinion)
     suspend fun removeOpinionForMovie(username: String, movieOpinion: MovieOpinion)
+    suspend fun findMovieByTitle(target: String): Movie?
 }
 
 @Service
@@ -90,5 +91,11 @@ class MovieServiceImpl(
             throw IllegalArgumentException("Users can only retract their vote.")
         }
         movieRepository.deleteOpinionByMovie(movie.id, movieOpinion.opinion)
+    }
+
+    override suspend fun findMovieByTitle(target: String): Movie? {
+        val entity = movieRepository.findByTitle(target)
+            ?: return null
+        return entity.toMovie()
     }
 }
