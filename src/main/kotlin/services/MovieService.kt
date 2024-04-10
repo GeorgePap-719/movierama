@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 interface MovieService {
     suspend fun register(input: RegisterMovie): Movie
     suspend fun postOpinion(username: String, movieOpinion: MovieOpinion)
+    suspend fun removeOpinionForMovie(username: String, movieOpinion: MovieOpinion)
 }
 
 @Service
@@ -63,7 +64,7 @@ class MovieServiceImpl(
         if (voted == null) {
             // Fast-path: save opinion.
             movieOpinionRepository.save(opinion)
-            TODO("inc-dec movie likes..")
+            movieRepository.postOpinionByMovie(movie.id, movieOpinion.opinion)
             return
         }
         // At this point, we know user has already voted for this movie.
@@ -75,6 +76,19 @@ class MovieServiceImpl(
             )
         }
         movieOpinionRepository.updateOpinion(opinion)
-        TODO("inc-dec movie likes..")
+        movieRepository.postOpinionByMovie(movie.id, movieOpinion.opinion)
+    }
+
+    override suspend fun removeOpinionForMovie(username: String, movieOpinion: MovieOpinion) {
+        val movie = movieRepository.findByTitle(movieOpinion.title)
+            ?: throw IllegalArgumentException("This title:${movieOpinion.title} does not exists.")
+        val user = userRepository.findByName(username)
+            ?: throw AuthenticationException("User with username:$username does not exists.")
+        val opinions = movieOpinionRepository.findAllOpinionsByUser(user.id)
+        val voted = opinions.find { it.movieId == movie.id }
+        if (voted == null) {
+            throw IllegalArgumentException("Users can only retract their vote.")
+        }
+        movieRepository.deleteOpinionByMovie(movie.id, movieOpinion.opinion)
     }
 }

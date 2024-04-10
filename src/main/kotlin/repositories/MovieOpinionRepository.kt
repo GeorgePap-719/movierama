@@ -2,6 +2,7 @@ package org.example.interviewtemplate.repositories
 
 import org.example.interviewtemplate.entities.MovieOpinionEntity
 import org.example.interviewtemplate.repositories.orm.mapToMovieOpinionEntities
+import org.example.interviewtemplate.repositories.util.checkForSingleRowUpdate
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
@@ -14,6 +15,7 @@ interface MovieOpinionRepository {
     suspend fun save(input: MovieOpinionEntity): MovieOpinionEntity
     suspend fun updateOpinion(input: MovieOpinionEntity): Int
     suspend fun findAllOpinionsByUser(target: Int): List<MovieOpinionEntity>
+    suspend fun deleteById(target: Int)
     suspend fun deleteAll(): Int
 }
 
@@ -51,9 +53,7 @@ class MovieOpinionRepositoryImpl(
                 """.trimIndent()
         }
         val updatedRows = spec.fetch().awaitRowsUpdated()
-        if (updatedRows > 1) {
-            throw IllegalStateException("Expected rows to be affected is one but updated:$updatedRows.")
-        }
+        checkForSingleRowUpdate(updatedRows)
         return updatedRows.toInt()
     }
 
@@ -63,6 +63,16 @@ class MovieOpinionRepositoryImpl(
             "SELECT * FROM movierama.opinions where user_id=$target"
         }
         return mapToMovieOpinionEntities(spec)
+    }
+
+    override suspend fun deleteById(target: Int) {
+        logger.debug { "Deleting opinion with id:$target." }
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "DELETE FROM movierama.opinions where id=$target"
+        }
+        val updatedRows = spec.fetch().awaitRowsUpdated()
+        checkForSingleRowUpdate(updatedRows)
     }
 
     override suspend fun deleteAll(): Int {

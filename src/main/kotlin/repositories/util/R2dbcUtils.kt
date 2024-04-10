@@ -14,3 +14,9 @@ fun <T : Any> OutboundRow.append(key: String, value: T): OutboundRow = this.appe
 
 inline fun <reified T> OutboundRow.appendOrEmpty(key: String, value: T): OutboundRow =
     append(key, fromOrEmpty(value, T::class.java))
+
+fun checkForSingleRowUpdate(rows: Long) {
+    check(rows == 1L) {
+        "Expected rows to be affected is one but updated:$rows."
+    }
+}
