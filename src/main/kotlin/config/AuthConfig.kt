@@ -1,5 +1,6 @@
 package org.example.interviewtemplate.config
 
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.reactor.mono
 import org.example.interviewtemplate.repositories.UserRepository
 import org.example.interviewtemplate.services.AuthService
@@ -47,7 +48,6 @@ class AuthConfig(
             }.build()
     }
 
-
     @Bean
     fun userDetailsService(): ReactiveUserDetailsService {
         return ReactiveUserDetailsServiceImpl()
@@ -68,6 +68,13 @@ class AuthConfig(
             authentication: Mono<Authentication>,
             `object`: AuthorizationContext
         ): Mono<AuthorizationDecision> = mono {
+            authentication.awaitSingleOrNull()?.let {
+                // We check for already authenticated clients.
+                // The typical use-case for this is to allow clients
+                // to use `@WithMockUser` or similar annotations to
+                // skip authentication.
+                if (it.isAuthenticated) return@mono AuthorizationDecision(true)
+            }
             val token = tryRetrieveToken(`object`)
             val authorized = authService.tryAuthorize(token)
             AuthorizationDecision(authorized)
@@ -78,7 +85,7 @@ class AuthConfig(
                 .exchange
                 .request
                 .headers[HttpHeaders.AUTHORIZATION]
-                ?: throw AuthenticationException()
+                ?: throw AuthenticationException("Bearer token is missing from headers.")
             val bearerToken = authHeader.firstOrNull() ?: throw AuthenticationException()
             val split = bearerToken.split(" ")
             return split.getOrNull(1) ?: throw AuthenticationException()

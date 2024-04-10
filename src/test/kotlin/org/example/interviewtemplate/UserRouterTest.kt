@@ -1,8 +1,6 @@
 package org.example.interviewtemplate
 
 import kotlinx.coroutines.runBlocking
-import org.example.interviewtemplate.dto.LoggedUser
-import org.example.interviewtemplate.dto.LoginUser
 import org.example.interviewtemplate.dto.RegisterUser
 import org.example.interviewtemplate.dto.User
 import org.example.interviewtemplate.repositories.UserRepository
@@ -30,7 +28,6 @@ class UserRouterTest(
     @LocalServerPort
     private val port: Int
 ) {
-
     private val userApiUrl = defaultUrl(port)
 
     private val registerUriApi = "$userApiUrl/users/register"
@@ -71,7 +68,6 @@ class UserRouterTest(
             .bodyValue(user)
             .awaitExchange {
                 assert(it.statusCode().value() == 400)
-                println(it.awaitBody<String>())
             }
     }
 
@@ -91,7 +87,6 @@ class UserRouterTest(
     data class BadRegisterUser(val name: String)
 
     @Test
-//    @WithMockUser
     fun testFindUserByName() = runBlocking {
         // Randomize name to avoid conflicts with concurrent calls in db,
         // since `name` column is unique.
@@ -106,18 +101,10 @@ class UserRouterTest(
         assert(response.statusCode.value() == 201)
         val registeredUser = response.body
         assertNotNull(registeredUser)
-        val loggedUser = webClient.post()
-            .uri("$userApiUrl/auth/login")
-            .bodyValue(LoginUser(user.name, user.password))
-            .accept(MediaType.APPLICATION_JSON)
-            .awaitRetrieveEntity<LoggedUser>()
-        println("token:${loggedUser.body!!.token}")
         webClient.get()
             .uri("$userApiUrl/users/${registeredUser.name}")
             .accept(MediaType.APPLICATION_JSON)
-            .headers { it.setBearerAuth(loggedUser.body!!.token) }
             .awaitExchange {
-                println(it.statusCode().value())
                 assert(it.statusCode().value() == 200)
                 val actualUser = it.awaitBody<User>()
                 assertEquals(registeredUser, actualUser)
