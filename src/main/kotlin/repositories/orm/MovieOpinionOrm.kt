@@ -33,21 +33,6 @@ private fun <T : Any> Flux<T?>.nullableAsFlow(): Flow<T> {
     return casted.asFlow()
 }
 
-//suspend fun mapToMovieOpinionEntity(spec: DatabaseClient.GenericExecuteSpec): MovieOpinionEntity? {
-//    return buildMovieOpinion {
-//        val fetchSpec = spec.map { row, metadata ->
-//            check(metadata.columnMetadatas.size == 4) {
-//                "Size should be equal of `MovieOpinionEntity` fields, but got:${metadata.columnMetadatas.size}."
-//            }
-//            id = row.getColumn<Int>("id")
-//            opinion = Opinion.valueOfOrThrow(row.getColumn<String>("opinion"))
-//            userId = row.getColumn<Int>("user_id")
-//            movieId = row.getColumn<Int>("movie_id")
-//        }
-//        fetchSpec.awaitSingleOrNull()
-//    }
-//}
-
 private fun Opinion.Companion.valueOfOrThrow(input: String): Opinion {
     return try {
         Opinion.valueOf(input)
@@ -57,7 +42,6 @@ private fun Opinion.Companion.valueOfOrThrow(input: String): Opinion {
         throw IllegalStateException(e)
     }
 }
-
 
 private inline fun buildMovieOpinion(action: MovieOpinionBuilder.() -> Unit): MovieOpinionEntity? {
     val builder = MovieOpinionBuilder()
