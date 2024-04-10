@@ -1,7 +1,8 @@
 package org.example.interviewtemplate
 
-import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
+import org.example.interviewtemplate.dto.LoggedUser
+import org.example.interviewtemplate.dto.LoginUser
 import org.example.interviewtemplate.dto.RegisterUser
 import org.example.interviewtemplate.dto.User
 import org.example.interviewtemplate.repositories.UserRepository
@@ -12,11 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
-import org.springframework.web.reactive.function.client.toEntity
 import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -92,7 +91,7 @@ class UserRouterTest(
     data class BadRegisterUser(val name: String)
 
     @Test
-    @WithMockUser
+//    @WithMockUser
     fun testFindUserByName() = runBlocking {
         // Randomize name to avoid conflicts with concurrent calls in db,
         // since `name` column is unique.
@@ -103,16 +102,22 @@ class UserRouterTest(
             .contentType(MediaType.APPLICATION_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .bodyValue(user)
-            .retrieve()
-            .toEntity<User>()
-            .awaitSingle()
+            .awaitRetrieveEntity<User>()
         assert(response.statusCode.value() == 201)
         val registeredUser = response.body
         assertNotNull(registeredUser)
+        val loggedUser = webClient.post()
+            .uri("$userApiUrl/auth/login")
+            .bodyValue(LoginUser(user.name, user.password))
+            .accept(MediaType.APPLICATION_JSON)
+            .awaitRetrieveEntity<LoggedUser>()
+        println("token:${loggedUser.body!!.token}")
         webClient.get()
             .uri("$userApiUrl/users/${registeredUser.name}")
             .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(loggedUser.body!!.token) }
             .awaitExchange {
+                println(it.statusCode().value())
                 assert(it.statusCode().value() == 200)
                 val actualUser = it.awaitBody<User>()
                 assertEquals(registeredUser, actualUser)

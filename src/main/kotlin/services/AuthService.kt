@@ -42,6 +42,7 @@ class AuthServiceImpl(
         // Prepare JWT with claims set.
         val claimsSet = JWTClaimsSet.Builder()
             .issuer(issuer)
+            // Make it valid for 1 hour.
             .expirationTime(Date(Date().time + 60 * 1000))
             .build()
         val signedJwt = SignedJWT(JWSHeader(JWSAlgorithm.HS256), claimsSet)
@@ -56,14 +57,14 @@ class AuthServiceImpl(
         val jwt = tryParseJwt(token)
         val verifier = MACVerifier(sharedKey)
         try {
-            if (!jwt.verify(verifier)) throw AuthenticationException()
+            if (!jwt.verify(verifier)) throw AuthenticationException("Signature failed verification.")
         } catch (e: JOSEException) {
             throw AuthenticationException()
         } catch (e: IllegalStateException) {
             throw AuthenticationException()
         }
         if (jwt.jwtClaimsSet.issuer != issuer) throw AuthenticationException("Invalid issuer.")
-        if (Date().before(jwt.jwtClaimsSet.expirationTime)) throw AuthenticationException("Session expired")
+        if (Date().after(jwt.jwtClaimsSet.expirationTime)) throw AuthenticationException("Session expired.")
     }
 
     private val issuer = "workable-interview"

@@ -4,13 +4,16 @@ import kotlinx.coroutines.reactor.mono
 import org.example.interviewtemplate.repositories.UserRepository
 import org.example.interviewtemplate.services.AuthService
 import org.example.interviewtemplate.services.AuthenticationException
+import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
-import org.springframework.security.authentication.ReactiveAuthenticationManager
+import org.springframework.http.HttpHeaders
+import org.springframework.security.authorization.AuthorizationDecision
+import org.springframework.security.authorization.ReactiveAuthorizationManager
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.Authentication
@@ -18,6 +21,7 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.web.server.SecurityWebFilterChain
+import org.springframework.security.web.server.authorization.AuthorizationContext
 import reactor.core.publisher.Mono
 
 
@@ -37,9 +41,9 @@ class AuthConfig(
         return http
             .csrf { csrf -> csrf.disable() }
             .authorizeExchange { auth ->
-                auth.pathMatchers("/auth/login").permitAll()
+                auth.pathMatchers("api/auth/login").permitAll()
                 auth.pathMatchers("api/users/register").permitAll()
-                auth.anyExchange().authenticated()
+                auth.anyExchange().access(AuthManager())
             }.build()
     }
 
@@ -58,8 +62,39 @@ class AuthConfig(
             }
         }
     }
-}
 
+    inner class AuthManager : ReactiveAuthorizationManager<AuthorizationContext> {
+        override fun check(
+            authentication: Mono<Authentication>,
+            `object`: AuthorizationContext
+        ): Mono<AuthorizationDecision> = mono {
+            val token = tryRetrieveToken(`object`)
+            val authorized = authService.tryAuthorize(token)
+            AuthorizationDecision(authorized)
+        }
+
+        private fun tryRetrieveToken(auth: AuthorizationContext): String {
+            val authHeader = auth
+                .exchange
+                .request
+                .headers[HttpHeaders.AUTHORIZATION]
+                ?: throw AuthenticationException()
+            val bearerToken = authHeader.firstOrNull() ?: throw AuthenticationException()
+            val split = bearerToken.split(" ")
+            return split.getOrNull(1) ?: throw AuthenticationException()
+        }
+
+        private fun AuthService.tryAuthorize(token: String): Boolean {
+            return try {
+                authorize(token)
+                true
+            } catch (e: AuthenticationException) {
+                logger.debug { e.stackTraceToString() }
+                false
+            }
+        }
+    }
+}
 
 class UserDetailsImpl(
     private val username: String,
@@ -73,10 +108,4 @@ class UserDetailsImpl(
     override fun isAccountNonLocked(): Boolean = true
     override fun isCredentialsNonExpired(): Boolean = true
     override fun isEnabled(): Boolean = true
-}
-
-class AuthManager : ReactiveAuthenticationManager {
-    override fun authenticate(authentication: Authentication?): Mono<Authentication> {
-        TODO("Not yet implemented")
-    }
 }
