@@ -1,4 +1,4 @@
-package org.example.interviewtemplate.repositories
+package org.example.interviewtemplate.repositories.util
 
 import org.springframework.r2dbc.core.DatabaseClient.GenericExecuteSpec
 import org.springframework.r2dbc.core.awaitSingle

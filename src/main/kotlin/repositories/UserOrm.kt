@@ -1,6 +1,7 @@
 package org.example.interviewtemplate.repositories
 
 import org.example.interviewtemplate.entities.UserEntity
+import org.example.interviewtemplate.repositories.util.getColumn
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.awaitSingleOrNull
 
