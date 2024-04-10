@@ -1,5 +1,7 @@
 package org.example.interviewtemplate.repositories
 
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.asFlow
 import org.example.interviewtemplate.entities.MovieOpinionEntity
 import org.example.interviewtemplate.repositories.orm.mapToMovieOpinionEntities
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
@@ -11,7 +13,7 @@ import org.springframework.stereotype.Repository
 
 interface MovieOpinionRepository {
     suspend fun save(input: MovieOpinionEntity): MovieOpinionEntity
-    suspend fun updateOpinion(input: MovieOpinionEntity): MovieOpinionEntity
+    suspend fun updateOpinion(input: MovieOpinionEntity): Int
     suspend fun findAllOpinionsByUser(target: Int): List<MovieOpinionEntity>
 }
 
@@ -39,8 +41,20 @@ class MovieOpinionRepositoryImpl(
         return postedOpinion
     }
 
-    override suspend fun updateOpinion(input: MovieOpinionEntity): MovieOpinionEntity {
-        TODO("Not yet implemented")
+    override suspend fun updateOpinion(input: MovieOpinionEntity): Int {
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            """
+                UPDATE movierama.opinions 
+                set opinion='${input.opinion}' 
+                where user_id=${input.userId} and movie_id=${input.movieId}
+                """.trimIndent()
+        }
+        val updatedRows = spec.fetch().all().asFlow().toList().size
+        if (updatedRows > 1) {
+            throw IllegalStateException("Expected rows to be affected is one but updated:$updatedRows.")
+        }
+        return updatedRows
     }
 
     override suspend fun findAllOpinionsByUser(target: Int): List<MovieOpinionEntity> {

@@ -15,6 +15,7 @@ interface MovieRepository {
     suspend fun findAll(): List<MovieEntity>
     suspend fun updateLikesForMovie(): Int
     suspend fun updateHatesForMovie(): Int
+    suspend fun updateOpinionForMovie(): Int
     suspend fun deleteAll(): Int
 }
 
@@ -62,8 +63,11 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteAll(): Int {
+    override suspend fun updateOpinionForMovie(): Int {
         TODO("Not yet implemented")
     }
 
+    override suspend fun deleteAll(): Int {
+        TODO("Not yet implemented")
+    }
 }

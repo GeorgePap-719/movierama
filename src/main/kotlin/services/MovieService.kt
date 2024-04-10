@@ -11,6 +11,7 @@ import org.example.interviewtemplate.repositories.MovieRepository
 import org.example.interviewtemplate.repositories.UserRepository
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 interface MovieService {
     suspend fun register(input: RegisterMovie): Movie
@@ -43,6 +44,7 @@ class MovieServiceImpl(
         }
     }
 
+    @Transactional
     override suspend fun postOpinion(username: String, movieOpinion: MovieOpinion) {
         val movie = movieRepository.findByTitle(movieOpinion.title)
             ?: throw IllegalArgumentException("This title:${movieOpinion.title} does not exists.")
