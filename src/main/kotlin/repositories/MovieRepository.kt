@@ -23,7 +23,7 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
 
     override suspend fun save(input: MovieEntity): MovieEntity {
         check(input.id == 0) { "All ids should be zero, they are auto-increased by db." }
-        logger.debug { "Saving move:$input." }
+        logger.debug { "Saving movie:$input." }
         val spec = template.databaseClient.sql {
             //language=MySQL
             """INSERT INTO movierama.movies (title, description, user_id, date, likes, hates) 
