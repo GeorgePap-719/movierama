@@ -1,4 +1,4 @@
-package org.example.interviewtemplate.api
+package org.example.interviewtemplate.api.utils
 
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.mono

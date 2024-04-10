@@ -1,4 +1,4 @@
-package org.example.interviewtemplate.api
+package org.example.interviewtemplate.api.utils
 
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.web.reactive.function.server.ServerRequest

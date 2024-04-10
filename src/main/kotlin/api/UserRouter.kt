@@ -1,5 +1,6 @@
 package org.example.interviewtemplate.api
 
+import org.example.interviewtemplate.api.utils.pathVariableOrNull
 import org.example.interviewtemplate.services.UserService
 import org.example.interviewtemplate.util.logger
 import org.springframework.context.annotation.Bean

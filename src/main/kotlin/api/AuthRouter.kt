@@ -1,5 +1,6 @@
 package org.example.interviewtemplate.api
 
+import org.example.interviewtemplate.api.utils.awaitReceive
 import org.example.interviewtemplate.dto.LoginUser
 import org.example.interviewtemplate.dto.RegisterUser
 import org.example.interviewtemplate.services.AuthService

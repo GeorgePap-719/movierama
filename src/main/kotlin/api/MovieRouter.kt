@@ -1,5 +1,6 @@
 package org.example.interviewtemplate.api
 
+import org.example.interviewtemplate.api.utils.awaitReceive
 import org.example.interviewtemplate.dto.RegisterMovie
 import org.example.interviewtemplate.services.MovieService
 import org.example.interviewtemplate.util.logger
