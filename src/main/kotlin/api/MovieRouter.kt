@@ -1,17 +1,16 @@
 package org.example.interviewtemplate.api
 
 import org.example.interviewtemplate.api.utils.awaitReceive
+import org.example.interviewtemplate.dto.MovieOpinion
 import org.example.interviewtemplate.dto.RegisterMovie
+import org.example.interviewtemplate.services.AuthenticationException
 import org.example.interviewtemplate.services.MovieService
 import org.example.interviewtemplate.util.logger
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.reactive.function.server.ServerResponse
-import org.springframework.web.reactive.function.server.bodyValueAndAwait
-import org.springframework.web.reactive.function.server.coRouter
+import org.springframework.web.reactive.function.server.*
 
 @Configuration
 class MovieRouter(private val movieHandler: MovieHandler) {
@@ -21,6 +20,7 @@ class MovieRouter(private val movieHandler: MovieHandler) {
         accept(MediaType.APPLICATION_JSON).nest {
             POST("api/movies", movieHandler::registerMovie)
             GET("api/movies/{title}", movieHandler::findMovieByTitle)
+            POST("api/movies/opinion", movieHandler::postOpinion)
         }
     }
 }
@@ -41,6 +41,15 @@ class MovieHandler(private val movieService: MovieService) {
 
     suspend fun findMovieByTitle(request: ServerRequest): ServerResponse {
         logger.info("request: api/movies/{title}")
+        TODO()
+    }
+
+    suspend fun postOpinion(request: ServerRequest): ServerResponse {
+        logger.info("request: api/movies/opinion")
+        val movieOpinion = request.awaitReceive<MovieOpinion>()
+        val principal =
+            request.awaitPrincipal() ?: throw AuthenticationException("Principal is missing.")
+
         TODO()
     }
 }

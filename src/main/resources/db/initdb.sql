@@ -20,10 +20,27 @@ CREATE TABLE IF NOT EXISTS movies
     likes       mediumint                not null,
     hates       mediumint                not null,
     PRIMARY KEY (id),
-    KEY FK_users (user_id),
-    CONSTRAINT FK_users FOREIGN KEY (user_id) REFERENCES users (id)
+    KEY FK_movies (user_id),
+    CONSTRAINT FK_movies FOREIGN KEY (user_id) REFERENCES users (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
+CREATE TABLE IF NOT EXISTS opinions
+(
+    id       mediumint auto_increment not null,
+    opinion  varchar(10)              not null,
+    user_id  mediumint                not null,
+    movie_id mediumint                not null,
+    PRIMARY KEY (id),
+    KEY FK_actions_1 (user_id),
+    KEY FK_actions_2 (movie_id),
+    CONSTRAINT FK_actions_1 FOREIGN KEY (user_id) REFERENCES users (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT FK_actions_2 FOREIGN KEY (movie_id) REFERENCES movies (id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;

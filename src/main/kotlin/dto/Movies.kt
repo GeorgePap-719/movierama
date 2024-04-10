@@ -36,3 +36,15 @@ fun MovieEntity.toMovie(): Movie {
         hates = hates
     )
 }
+
+@Serializable
+data class MovieOpinion(
+    val title: String,
+    val opinion: Opinion
+)
+
+@Serializable
+enum class Opinion {
+    LIKE,
+    HATE
+}

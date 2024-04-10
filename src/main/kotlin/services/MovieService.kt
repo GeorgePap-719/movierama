@@ -1,6 +1,7 @@
 package org.example.interviewtemplate.services
 
 import org.example.interviewtemplate.dto.Movie
+import org.example.interviewtemplate.dto.MovieOpinion
 import org.example.interviewtemplate.dto.RegisterMovie
 import org.example.interviewtemplate.dto.toMovie
 import org.example.interviewtemplate.entities.MovieEntity
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service
 
 interface MovieService {
     suspend fun register(input: RegisterMovie): Movie
+    suspend fun postOpinion(username: String, movieOpinion: MovieOpinion)
 }
 
 @Service
@@ -32,5 +34,10 @@ class MovieServiceImpl(private val movieRepository: MovieRepository) : MovieServ
         } catch (e: DuplicateKeyException) {
             throw IllegalArgumentException("The movie with title:${input.title} already exists.")
         }
+    }
+
+    override suspend fun postOpinion(username: String, movieOpinion: MovieOpinion) {
+
+        TODO("Not yet implemented")
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository
 
 interface MovieRepository {
     suspend fun save(input: MovieEntity): MovieEntity
+    suspend fun findByTitle(target: String): MovieEntity?
     suspend fun findAll(): List<MovieEntity>
     suspend fun updateLikesForMovie(): Int
     suspend fun updateHatesForMovie(): Int
@@ -38,6 +39,14 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
         val generatedId = spec.saveAndReturnGeneratedId()
         val newMovie = input.copy(id = generatedId)
         return newMovie
+    }
+
+    override suspend fun findByTitle(target: String): MovieEntity? {
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "SELECT * FROM movierama.movies where title='$target'"
+        }
+        return mapToMovieEntity(spec)
     }
 
     override suspend fun findAll(): List<MovieEntity> {
