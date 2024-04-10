@@ -56,7 +56,7 @@ class AuthConfigTest(
     @Test
     fun testAuthorizeWithBearerToken() = runBlocking {
         val registerUser = RegisterUser(randomName(), randomPass())
-        registerUser(registerUser)
+        val user = registerUser(registerUser)
         val loggedUser = webClient.post()
             .uri("$userApiUrl/auth/login")
             .bodyValue(LoginUser(registerUser.name, registerUser.password))
@@ -69,7 +69,7 @@ class AuthConfigTest(
             .awaitExchange {
                 assert(it.statusCode().value() == 200)
                 val actual = it.awaitBody<User>()
-                val expected = User(registerUser.name)
+                val expected = User(registerUser.name, user.id)
                 assertEquals(expected, actual)
             }
     }
@@ -91,7 +91,7 @@ class AuthConfigTest(
             }
     }
 
-    private suspend fun registerUser(user: RegisterUser) {
+    private suspend fun registerUser(user: RegisterUser): User {
         val response = webClient.post()
             .uri("$userApiUrl/auth/register")
             .contentType(MediaType.APPLICATION_JSON)
@@ -99,5 +99,6 @@ class AuthConfigTest(
             .bodyValue(user)
             .awaitRetrieveEntity<User>()
         assert(response.statusCode.value() == 201)
+        return requireNotNull(response.body)
     }
 }

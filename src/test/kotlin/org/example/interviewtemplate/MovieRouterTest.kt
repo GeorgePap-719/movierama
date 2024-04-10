@@ -38,12 +38,12 @@ class MovieRouterTest(
     @Test
     @WithMockUser
     fun testRegisterMovie(): Unit = runBlocking {
-        val user = RegisterUser(randomName(), randomPass())
-        registerUser(user)
+        val registerUser = RegisterUser(randomName(), randomPass())
+        val user = registerUser(registerUser)
         val newMovie = RegisterMovie(
             "random",
             "cool one",
-            110 // FCK!
+            user.id
         )
         val response = webClient.post()
             .uri("$baseUrl/movies")
@@ -54,7 +54,7 @@ class MovieRouterTest(
         println(response.body)
     }
 
-    private suspend fun registerUser(user: RegisterUser) {
+    private suspend fun registerUser(user: RegisterUser): User {
         val response = webClient.post()
             .uri("$baseUrl/auth/register")
             .contentType(MediaType.APPLICATION_JSON)
@@ -62,5 +62,6 @@ class MovieRouterTest(
             .bodyValue(user)
             .awaitRetrieveEntity<User>()
         assert(response.statusCode.value() == 201)
+        return requireNotNull(response.body)
     }
 }

@@ -33,7 +33,7 @@ class AuthHandler(private val service: AuthService) {
         val newUser = service.register(body)
         return ServerResponse
             .created(URI.create("api/users/${newUser.name}"))
-            .buildAndAwait()
+            .bodyValueAndAwait(newUser)
     }
 
     suspend fun login(request: ServerRequest): ServerResponse {

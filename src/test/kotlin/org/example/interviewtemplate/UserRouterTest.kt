@@ -100,7 +100,7 @@ class UserRouterTest(
             .awaitExchange {
                 assert(it.statusCode().value() == 200)
                 val actual = it.awaitBody<User>()
-                val expected = User(user.name)
+                val expected = User(user.name, requireNotNull(response.body?.id))
                 assertEquals(expected, actual)
             }
     }

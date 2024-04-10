@@ -4,9 +4,9 @@ import kotlinx.serialization.Serializable
 import org.example.interviewtemplate.entities.UserEntity
 
 @Serializable
-data class User(val name: String)
+data class User(val name: String, val id: Int)
 
-fun UserEntity.toUser(): User = User(name)
+fun UserEntity.toUser(): User = User(name, id)
 
 @Serializable
 data class RegisterUser(val name: String, val password: String) {
