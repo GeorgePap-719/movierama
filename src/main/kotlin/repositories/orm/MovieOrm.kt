@@ -1,4 +1,4 @@
-package org.example.interviewtemplate.repositories
+package org.example.interviewtemplate.repositories.orm
 
 import org.example.interviewtemplate.entities.MovieEntity
 import org.example.interviewtemplate.repositories.util.getColumn

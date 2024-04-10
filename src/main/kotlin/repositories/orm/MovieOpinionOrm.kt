@@ -1,4 +1,4 @@
-package org.example.interviewtemplate.repositories
+package org.example.interviewtemplate.repositories.orm
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList

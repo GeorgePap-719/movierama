@@ -46,7 +46,6 @@ class MovieServiceImpl(
     override suspend fun postOpinion(username: String, movieOpinion: MovieOpinion) {
         val movie = movieRepository.findByTitle(movieOpinion.title)
             ?: throw IllegalArgumentException("This title:${movieOpinion.title} does not exists.")
-        //TODO: if there is enough time, check how to avoid this redundant call.
         val user = userRepository.findByName(username)
             ?: throw AuthenticationException("User with username:$username does not exists.")
         if (user.id == movie.userId) {
@@ -60,8 +59,9 @@ class MovieServiceImpl(
             movieId = movie.id
         )
         if (voted == null) {
-            // Fast-path: post opinion.
+            // Fast-path: save opinion.
             movieOpinionRepository.save(opinion)
+            TODO("inc-dec movie likes..")
             return
         }
         // At this point, we know user has already voted for this movie.

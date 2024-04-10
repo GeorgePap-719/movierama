@@ -1,6 +1,7 @@
 package org.example.interviewtemplate.repositories
 
 import org.example.interviewtemplate.entities.MovieEntity
+import org.example.interviewtemplate.repositories.orm.mapToMovieEntity
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
