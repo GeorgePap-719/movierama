@@ -1,4 +1,4 @@
-package org.example.interviewtemplate.api.utils
+package org.example.interviewtemplate.api.util
 
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.mono
@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import org.example.interviewtemplate.services.AuthenticationException
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
+import org.example.interviewtemplate.util.toMono
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -68,8 +69,6 @@ class GlobalExceptionHandler : WebExceptionHandler {
         }
     }
 }
-
-private fun <T : Any> T?.toMono(): Mono<T> = Mono.justOrEmpty(this)
 
 private fun errorMessage(error: String): ByteArray =
     ErrorMessage(error).encodeToJson().toByteArray()
