@@ -7,7 +7,6 @@ import org.example.interviewtemplate.services.AuthService
 import org.example.interviewtemplate.services.AuthenticationException
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
@@ -21,8 +20,6 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.oauth2.server.resource.web.server.BearerTokenServerAuthenticationEntryPoint
 import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter
@@ -32,8 +29,6 @@ import org.springframework.security.web.server.authentication.WebFilterChainServ
 import org.springframework.security.web.server.authorization.AuthorizationContext
 import org.springframework.security.web.server.context.WebSessionServerSecurityContextRepository
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
-import org.springframework.web.server.CoWebFilter
-import org.springframework.web.server.CoWebFilterChain
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 import java.security.Principal
@@ -43,8 +38,6 @@ import java.security.Principal
 @EnableWebFluxSecurity
 class AuthConfig(
     private val authService: AuthService,
-    @Value("\${sharedkey}")
-    private val _sharedKey: String,
     private val userRepository: UserRepository
 ) {
     private val logger = logger()
@@ -54,27 +47,14 @@ class AuthConfig(
     fun apiHttpSecurity(http: ServerHttpSecurity): SecurityWebFilterChain {
         return http
             .csrf { csrf -> csrf.disable() }
-//            .addFilterAt(authWebFilter(), SecurityWebFiltersOrder.AUTHORIZATION)
-//            .exceptionHandling {
-//                // Research a bit more what this does when it populates the headers.
-//                it.authenticationEntryPoint(BearerTokenServerAuthenticationEntryPoint())
-//                it.accessDeniedHandler(BearerTokenServerAccessDeniedHandler())
-//            }
             .authorizeExchange { auth ->
                 auth.pathMatchers("api/auth/login").permitAll()
                 auth.pathMatchers("api/auth/register").permitAll()
-                //auth.anyExchange().authenticated()//.access(AuthorizationManager())
                 auth.anyExchange().access(AuthorizationManager())
             }
             .authenticationManager(AuthenticationManager())
             .addFilterAt(authWebFilter(), SecurityWebFiltersOrder.REACTOR_CONTEXT)
-            //.securityContextRepository(WebSessionServerSecurityContextRepository())
             .build()
-    }
-
-    private class BearerFilterAuth : CoWebFilter() {
-        override suspend fun filter(exchange: ServerWebExchange, chain: CoWebFilterChain) {
-        }
     }
 
     private fun authWebFilter(): AuthenticationWebFilter {
@@ -94,43 +74,48 @@ class AuthConfig(
         }
     }
 
-    @Bean
-    fun userDetailsService(): ReactiveUserDetailsService {
-        return ReactiveUserDetailsServiceImpl()
-    }
-
     inner class ServerAuthenticationConverterImpl : ServerAuthenticationConverter {
         override fun convert(exchange: ServerWebExchange): Mono<Authentication> {
             return mono {
-                logger.debug { "ServerAuthenticationConverter is invoked." }
                 val token = tryRetrieveToken(exchange.request.headers)
                 val username = authService.authorize(token)
                 logger.debug { "Verified token for user:$username" }
                 val user = userRepository.findByName(username)
                     ?: throw AuthenticationException("User with username:$username, does not exists.")
                 val principal = PrincipalWithUserId(user.name, user.id)
-                AuthenticationImpl(principal, true)
+                AuthenticationToken(principal, true)
             }
         }
 
         private fun tryRetrieveToken(headers: HttpHeaders): String {
             val authHeader = headers[HttpHeaders.AUTHORIZATION]
                 ?: throw AuthenticationException("Bearer token is missing from headers.")
-            val bearerToken = authHeader.firstOrNull() ?: throw AuthenticationException()
+            val bearerToken = authHeader.firstOrNull()
+                ?: throw AuthenticationException(malformedTokenMsg)
             val split = bearerToken.split(" ")
-            return split.getOrNull(1) ?: throw AuthenticationException()
+            return split.getOrNull(1)
+                ?: throw AuthenticationException(malformedTokenMsg)
         }
+
+        private val malformedTokenMsg = "Bearer token is probably malformed."
     }
 
-
-    inner class ReactiveUserDetailsServiceImpl : ReactiveUserDetailsService {
-        override fun findByUsername(username: String): Mono<UserDetails> {
-            return mono {
-                logger.debug { "Authenticating username:$username." }
-                val user = userRepository.findByName(username)
-                    ?: throw AuthenticationException()
-                UserDetailsImpl(user.name, user.encryptedPassword)
+    inner class AuthorizationManager : ReactiveAuthorizationManager<AuthorizationContext> {
+        override fun check(
+            authentication: Mono<Authentication>,
+            `object`: AuthorizationContext
+        ): Mono<AuthorizationDecision> = mono {
+            authentication.awaitSingleOrNull()?.let {
+                // We check for already authenticated clients.
+                // The typical use-case for this is to allow clients
+                // to use `@WithMockUser` or similar annotations to
+                // skip authentication.
+                if (it.isAuthenticated) return@mono AuthorizationDecision(true)
             }
+            // At this point, even if we can authenticate the request,
+            // we cannot populate the `principal` property.
+            // It's more convenient to deny any requests that reach here.
+            AuthorizationDecision(false)
         }
     }
 
@@ -143,61 +128,11 @@ class AuthConfig(
             }
         }
     }
-
-    inner class AuthorizationManager : ReactiveAuthorizationManager<AuthorizationContext> {
-        override fun check(
-            authentication: Mono<Authentication>,
-            `object`: AuthorizationContext
-        ): Mono<AuthorizationDecision> = mono {
-            logger.debug { "AuthorizeManager is invoked." }
-            authentication.awaitSingleOrNull()?.let {
-                // We check for already authenticated clients.
-                // The typical use-case for this is to allow clients
-                // to use `@WithMockUser` or similar annotations to
-                // skip authentication.
-                if (it.isAuthenticated) return@mono AuthorizationDecision(true)
-            }
-            val token = tryRetrieveToken(`object`)
-            val username = authService.authorize(token)
-            logger.debug { "Verified token for user:$username" }
-            val user = userRepository.findByName(username)
-                ?: throw AuthenticationException("User with username:$username, does not exists.")
-            // This is not used anywhere.
-            // `object`.exchange.mutate().principal(createPrincipal(user.name, user.id).toMono()).build()
-            AuthorizationDecision(true)
-        }
-
-        private fun tryRetrieveToken(auth: AuthorizationContext): String {
-            val authHeader = auth
-                .exchange
-                .request
-                .headers[HttpHeaders.AUTHORIZATION]
-                ?: throw AuthenticationException("Bearer token is missing from headers.")
-            val bearerToken = authHeader.firstOrNull() ?: throw AuthenticationException()
-            val split = bearerToken.split(" ")
-            return split.getOrNull(1) ?: throw AuthenticationException()
-        }
-
-    }
 }
 
-class UserDetailsImpl(
+class PrincipalWithUserId(
     private val username: String,
-    private val password: String,
-    private val authorities: MutableCollection<out GrantedAuthority> = ArrayList()
-) : UserDetails {
-    override fun getAuthorities(): MutableCollection<out GrantedAuthority> = authorities
-    override fun getPassword(): String = password
-    override fun getUsername(): String = username
-    override fun isAccountNonExpired(): Boolean = true
-    override fun isAccountNonLocked(): Boolean = true
-    override fun isCredentialsNonExpired(): Boolean = true
-    override fun isEnabled(): Boolean = true
-}
-
-private class PrincipalWithUserId(
-    private val username: String,
-    private val userId: Int
+    val userId: Int
 ) : Principal {
     override fun getName(): String = username
 
@@ -217,7 +152,7 @@ private class PrincipalWithUserId(
     }
 }
 
-private class AuthenticationImpl(
+class AuthenticationToken(
     val principalWithUserId: PrincipalWithUserId? = null,
     private var authenticated: Boolean
 ) : Authentication {
