@@ -40,9 +40,9 @@ class MovieRouterTest(
 
     @AfterEach
     fun afterEach(): Unit = runBlocking {
-//        userRepository.deleteAll()
-//        movieRepository.deleteAll()
-//        movieOpinionRepository.deleteAll()
+        userRepository.deleteAll()
+        movieRepository.deleteAll()
+        movieOpinionRepository.deleteAll()
     }
 
     @Test
@@ -114,12 +114,6 @@ class MovieRouterTest(
                 assert(it.awaitBodyOrNull<Movie>() == null)
             }
     }
-
-    // Scenarios to check:
-    // - [x] A user can post an opinion for a movie.
-    // - [x] A user cannot post opinion for a movie he submitted.
-    // - [x] A user can change opinion for a move he posted an opinion.
-    // - [x] A user cannot post the same opinion for the same movie, only change it or retract it.
 
     @Test
     fun testPostOpinion(): Unit = runBlocking {
@@ -339,6 +333,54 @@ class MovieRouterTest(
         movie = movieRepository.findByTitle(movieOpinion.title)
         assertNotNull(movie)
         assert(movie.likes == 0)
+        assert(movie.hates == 0)
+    }
+
+    @Test
+    fun testUserCanRetractOnlyHisOpinion(): Unit = runBlocking {
+        val user1 = prepareUser()
+        val newMovie = RegisterMovie(
+            "movie" + randomName(),
+            "cool one",
+            user1.id
+        )
+        webClient.post()
+            .uri("$baseUrl/movies")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user1.info.token) }
+            .bodyValue(newMovie)
+            .awaitRetrieveEntity<Movie>()
+        val user2 = prepareUser()
+        val movieOpinion = MovieOpinion(
+            newMovie.title,
+            Opinion.LIKE
+        )
+        webClient.post()
+            .uri("$baseUrl/movies/opinion")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user2.info.token) }
+            .bodyValue(movieOpinion)
+            .awaitExchange {
+                assert(it.statusCode().value() == 200)
+                assert(it.awaitBodyOrNull<Unit>() == null)
+            }
+        var movie = movieRepository.findByTitle(movieOpinion.title)
+        assertNotNull(movie)
+        assert(movie.likes == 1)
+        assert(movie.hates == 0)
+
+        webClient.post()
+            .uri("$baseUrl/movies/opinion/retract")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user1.info.token) }
+            .bodyValue(movieOpinion)
+            .awaitExchange {
+                assert(it.statusCode().value() == 400)
+                it.awaitBody<ErrorMessage>()
+            }
+        movie = movieRepository.findByTitle(movieOpinion.title)
+        assertNotNull(movie)
+        assert(movie.likes == 1)
         assert(movie.hates == 0)
     }
 
