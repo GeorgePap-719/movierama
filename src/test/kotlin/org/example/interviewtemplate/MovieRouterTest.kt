@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitBodyOrNull
@@ -47,10 +46,8 @@ class MovieRouterTest(
     }
 
     @Test
-    @WithMockUser
     fun testRegisterMovie(): Unit = runBlocking {
-        val registerUser = RegisterUser(randomName(), randomPass())
-        val user = registerUser(registerUser)
+        val user = prepareUser()
         val newMovie = RegisterMovie(
             "movie" + randomName(),
             "cool one",
@@ -59,6 +56,7 @@ class MovieRouterTest(
         val response = webClient.post()
             .uri("$baseUrl/movies")
             .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
             .bodyValue(newMovie)
             .awaitRetrieveEntity<Movie>()
         assert(response.statusCode.value() == 201)
@@ -74,10 +72,8 @@ class MovieRouterTest(
     }
 
     @Test
-    @WithMockUser
     fun testFindMovieByTitle(): Unit = runBlocking {
-        val registerUser = RegisterUser(randomName(), randomPass())
-        val user = registerUser(registerUser)
+        val user = prepareUser()
         val newMovie = RegisterMovie(
             "movie" + randomName(),
             "cool one",
@@ -86,6 +82,7 @@ class MovieRouterTest(
         val newMovieResponse = webClient.post()
             .uri("$baseUrl/movies")
             .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
             .bodyValue(newMovie)
             .awaitRetrieveEntity<Movie>()
         assert(newMovieResponse.statusCode.value() == 201)
@@ -93,6 +90,7 @@ class MovieRouterTest(
         val response = webClient.get()
             .uri("$baseUrl/movies/${newMovie.title}")
             .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
             .awaitRetrieveEntity<Movie>()
         assert(response.statusCode.value() == 200)
         assertNotNull(response.body)
@@ -100,10 +98,8 @@ class MovieRouterTest(
     }
 
     @Test
-    @WithMockUser
     fun testNotFindMovieByTitle(): Unit = runBlocking {
-        val registerUser = RegisterUser(randomName(), randomPass())
-        val user = registerUser(registerUser)
+        val user = prepareUser()
         val newMovie = RegisterMovie(
             "movie" + randomName(),
             "cool one",
@@ -112,6 +108,7 @@ class MovieRouterTest(
         webClient.get()
             .uri("$baseUrl/movies/${newMovie.title}")
             .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
             .awaitExchange {
                 assert(it.statusCode().value() == 404)
                 assert(it.awaitBodyOrNull<Movie>() == null)

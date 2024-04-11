@@ -27,7 +27,6 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler
 import org.springframework.security.web.server.authentication.WebFilterChainServerAuthenticationSuccessHandler
 import org.springframework.security.web.server.authorization.AuthorizationContext
-import org.springframework.security.web.server.context.WebSessionServerSecurityContextRepository
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
@@ -65,7 +64,6 @@ class AuthConfig(
             setAuthenticationFailureHandler(failureHandler)
             setAuthenticationSuccessHandler(WebFilterChainServerAuthenticationSuccessHandler())
             setServerAuthenticationConverter(ServerAuthenticationConverterImpl())
-            setSecurityContextRepository(WebSessionServerSecurityContextRepository())
             setRequiresAuthenticationMatcher {
                 ServerWebExchangeMatchers
                     .pathMatchers("api/movies/**", "api/users/**")
@@ -77,6 +75,10 @@ class AuthConfig(
     inner class ServerAuthenticationConverterImpl : ServerAuthenticationConverter {
         override fun convert(exchange: ServerWebExchange): Mono<Authentication> {
             return mono {
+                exchange.getPrincipal<Principal>().awaitSingleOrNull()?.let {
+                    logger.debug { "Received principal with name:${it.name}." }
+                }
+                //..
                 val token = tryRetrieveToken(exchange.request.headers)
                 val username = authService.authorize(token)
                 logger.debug { "Verified token for user:$username" }

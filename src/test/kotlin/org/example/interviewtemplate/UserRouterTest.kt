@@ -1,6 +1,8 @@
 package org.example.interviewtemplate
 
 import kotlinx.coroutines.runBlocking
+import org.example.interviewtemplate.dto.LoggedUser
+import org.example.interviewtemplate.dto.LoginUser
 import org.example.interviewtemplate.dto.RegisterUser
 import org.example.interviewtemplate.dto.User
 import org.example.interviewtemplate.repositories.UserRepository
@@ -11,11 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -27,9 +29,9 @@ class UserRouterTest(
     @LocalServerPort
     private val port: Int
 ) {
-    private val userApiUrl = defaultUrl(port)
+    private val baseUrl = defaultUrl(port)
 
-    private val registerUriApi = "$userApiUrl/auth/register"
+    private val registerUriApi = "$baseUrl/auth/register"
 
     @AfterEach
     fun afterEach(): Unit = runBlocking {
@@ -84,9 +86,36 @@ class UserRouterTest(
     data class BadRegisterUser(val name: String)
 
     @Test
-    @WithMockUser
     fun testFindUserByName() = runBlocking {
-        val user = RegisterUser(randomName(), randomPass())
+        val user = prepareUser()
+        webClient.get()
+            .uri("$baseUrl/users/${user.info.name}")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
+            .awaitExchange {
+                assert(it.statusCode().value() == 200)
+                val actual = it.awaitBody<User>()
+                val expected = User(user.info.name, requireNotNull(user.id))
+                assertEquals(expected, actual)
+            }
+    }
+
+    private suspend fun prepareUser(): LoggedUserWithId {
+        val registerUser = RegisterUser(randomName(), randomPass())
+        val user = registerUser(registerUser)
+        val response = webClient.post()
+            .uri("$baseUrl/auth/login")
+            .bodyValue(LoginUser(registerUser.name, registerUser.password))
+            .accept(MediaType.APPLICATION_JSON)
+            .awaitRetrieveEntity<LoggedUser>()
+        assert(response.statusCode.value() == 200)
+        val body = assertNotNull(response.body)
+        return LoggedUserWithId(body, user.id)
+    }
+
+    private class LoggedUserWithId(val info: LoggedUser, val id: Int)
+
+    private suspend fun registerUser(user: RegisterUser): User {
         val response = webClient.post()
             .uri(registerUriApi)
             .contentType(MediaType.APPLICATION_JSON)
@@ -94,15 +123,7 @@ class UserRouterTest(
             .bodyValue(user)
             .awaitRetrieveEntity<User>()
         assert(response.statusCode.value() == 201)
-        webClient.get()
-            .uri("$userApiUrl/users/${user.name}")
-            .accept(MediaType.APPLICATION_JSON)
-            .awaitExchange {
-                assert(it.statusCode().value() == 200)
-                val actual = it.awaitBody<User>()
-                val expected = User(user.name, requireNotNull(response.body?.id))
-                assertEquals(expected, actual)
-            }
+        return requireNotNull(response.body)
     }
 }
 

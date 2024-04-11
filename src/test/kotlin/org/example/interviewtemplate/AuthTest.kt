@@ -1,6 +1,5 @@
 package org.example.interviewtemplate
 
-import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
 import org.example.interviewtemplate.dto.LoggedUser
 import org.example.interviewtemplate.dto.LoginUser
@@ -16,7 +15,6 @@ import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
-import org.springframework.web.reactive.function.client.toEntity
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -46,9 +44,7 @@ class AuthTest(
             .uri("$userApiUrl/auth/login")
             .bodyValue(LoginUser(registerUser.name, registerUser.password))
             .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .toEntity<LoggedUser>()
-            .awaitSingle()
+            .awaitRetrieveEntity<LoggedUser>()
         assert(response.statusCode.value() == 200)
         assertNotNull(response.body)
     }
