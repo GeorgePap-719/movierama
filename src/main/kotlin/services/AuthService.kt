@@ -23,7 +23,7 @@ import java.util.*
 interface AuthService {
     suspend fun register(input: RegisterUser): User
     suspend fun login(input: LoginUser): LoggedUser?
-    fun authorize(token: String)
+    fun authorize(token: String): String
 }
 
 @Service
@@ -57,16 +57,17 @@ class AuthServiceImpl(
     override suspend fun login(input: LoginUser): LoggedUser? {
         val user = userRepository.findByName(input.name) ?: return null
         if (!checkpw(input.password, user.encryptedPassword)) throw AuthenticationException()
-        val token = createJwt(sharedKey)
+        val token = createJwt(sharedKey, user.name)
         return LoggedUser(name = user.name, token = token)
     }
 
-    private fun createJwt(secret: ByteArray): String {
+    private fun createJwt(secret: ByteArray, username: String): String {
         // Create HMAC signer.
         val signer = MACSigner(secret)
         // Prepare JWT with claims set.
         val claimsSet = JWTClaimsSet.Builder()
             .issuer(issuer)
+            .subject(username)
             // Make it valid for 1 hour.
             .expirationTime(Date(Date().time + 60 * 1000))
             .build()
@@ -78,7 +79,7 @@ class AuthServiceImpl(
         return signedJwt.serialize()
     }
 
-    override fun authorize(token: String) {
+    override fun authorize(token: String): String {
         val jwt = tryParseJwt(token)
         val verifier = MACVerifier(sharedKey)
         try {
@@ -90,6 +91,7 @@ class AuthServiceImpl(
         }
         if (jwt.jwtClaimsSet.issuer != issuer) throw AuthenticationException("Invalid issuer.")
         if (Date().after(jwt.jwtClaimsSet.expirationTime)) throw AuthenticationException("Session expired.")
+        return jwt.jwtClaimsSet.subject.toString()
     }
 
     private val issuer = "workable-interview"
