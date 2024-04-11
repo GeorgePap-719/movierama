@@ -1,6 +1,7 @@
 package org.example.interviewtemplate
 
 import kotlinx.coroutines.runBlocking
+import org.example.interviewtemplate.api.util.ErrorMessage
 import org.example.interviewtemplate.dto.*
 import org.example.interviewtemplate.repositories.MovieOpinionRepository
 import org.example.interviewtemplate.repositories.MovieRepository
@@ -13,6 +14,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitBodyOrNull
 import org.springframework.web.reactive.function.client.awaitExchange
 import kotlin.test.Test
@@ -39,9 +41,9 @@ class MovieRouterTest(
 
     @AfterEach
     fun afterEach(): Unit = runBlocking {
-//        userRepository.deleteAll()
-//        movieRepository.deleteAll()
-//        movieOpinionRepository.deleteAll()
+        userRepository.deleteAll()
+        movieRepository.deleteAll()
+        movieOpinionRepository.deleteAll()
     }
 
     @Test
@@ -118,8 +120,8 @@ class MovieRouterTest(
 
     // Scenarios to check:
     // - [x] A user can post an opinion for a movie.
-    // - [] A user cannot post opinion for a movie he submitted.
-    //
+    // - [x] A user cannot post opinion for a movie he submitted.
+    // - [x] A user can change opinion for a move he posted an opinion.
 
     @Test
     fun testPostOpinion(): Unit = runBlocking {
@@ -146,9 +148,104 @@ class MovieRouterTest(
             .headers { it.setBearerAuth(user2.info.token) }
             .bodyValue(movieOpinion)
             .awaitExchange {
-                println(it.statusCode().value())
-                println(it.awaitBodyOrNull())
+                assert(it.statusCode().value() == 200)
+                assert(it.awaitBodyOrNull<Unit>() == null)
             }
+    }
+
+    @Test
+    fun testPostOpinionNotFoundTitle(): Unit = runBlocking {
+        val user = prepareUser()
+        val movieOpinion = MovieOpinion(
+            "some-movie " + randomName(),
+            Opinion.LIKE
+        )
+        webClient.post()
+            .uri("$baseUrl/movies/opinion")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
+            .bodyValue(movieOpinion)
+            .awaitExchange {
+                assert(it.statusCode().value() == 400)
+                it.awaitBody<ErrorMessage>()
+            }
+    }
+
+    @Test
+    fun testPostOpinionForMovieUserSubmitted(): Unit = runBlocking {
+        val user = prepareUser()
+        val newMovie = RegisterMovie(
+            "movie" + randomName(),
+            "cool one",
+            user.id
+        )
+        webClient.post()
+            .uri("$baseUrl/movies")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
+            .bodyValue(newMovie)
+            .awaitRetrieveEntity<Movie>()
+        val movieOpinion = MovieOpinion(
+            newMovie.title,
+            Opinion.LIKE
+        )
+        webClient.post()
+            .uri("$baseUrl/movies/opinion")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
+            .bodyValue(movieOpinion)
+            .awaitExchange {
+                assert(it.statusCode().value() == 400)
+                it.awaitBody<ErrorMessage>()
+            }
+    }
+
+    @Test
+    fun testUpdateOpinion(): Unit = runBlocking {
+        val user1 = prepareUser()
+        val newMovie = RegisterMovie(
+            "movie" + randomName(),
+            "cool one",
+            user1.id
+        )
+        webClient.post()
+            .uri("$baseUrl/movies")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user1.info.token) }
+            .bodyValue(newMovie)
+            .awaitRetrieveEntity<Movie>()
+        val user2 = prepareUser()
+        val movieOpinion = MovieOpinion(
+            newMovie.title,
+            Opinion.LIKE
+        )
+        webClient.post()
+            .uri("$baseUrl/movies/opinion")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user2.info.token) }
+            .bodyValue(movieOpinion)
+            .awaitExchange {
+                assert(it.statusCode().value() == 200)
+                assert(it.awaitBodyOrNull<Unit>() == null)
+            }
+        var movie = movieRepository.findByTitle(movieOpinion.title)
+        assertNotNull(movie)
+        assert(movie.likes == 1)
+        assert(movie.hates == 0)
+
+        webClient.post()
+            .uri("$baseUrl/movies/opinion")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user2.info.token) }
+            .bodyValue(movieOpinion.copy(opinion = Opinion.HATE))
+            .awaitExchange {
+                assert(it.statusCode().value() == 200)
+                assert(it.awaitBodyOrNull<Unit>() == null)
+            }
+        movie = movieRepository.findByTitle(movieOpinion.title)
+        assertNotNull(movie)
+        assert(movie.likes == 0)
+        assert(movie.hates == 1)
     }
 
     // Skip asserting `date`, as it is generated by db.

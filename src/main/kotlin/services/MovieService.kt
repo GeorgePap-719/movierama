@@ -72,7 +72,7 @@ class MovieServiceImpl(
             )
         }
         movieOpinionRepository.updateOpinion(opinion)
-        movieRepository.postOpinionByMovie(movie.id, movieOpinion.opinion)
+        movieRepository.updateOpinionByMovie(movie.id, movieOpinion.opinion)
     }
 
     override suspend fun removeOpinionForMovie(
