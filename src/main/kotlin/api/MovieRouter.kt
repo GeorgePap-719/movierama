@@ -2,10 +2,13 @@ package org.example.interviewtemplate.api
 
 import org.example.interviewtemplate.api.utils.awaitReceive
 import org.example.interviewtemplate.api.utils.pathVariableOrNull
+import org.example.interviewtemplate.config.AuthenticationToken
+import org.example.interviewtemplate.dto.AuthenticatedUser
 import org.example.interviewtemplate.dto.MovieOpinion
 import org.example.interviewtemplate.dto.RegisterMovie
 import org.example.interviewtemplate.services.AuthenticationException
 import org.example.interviewtemplate.services.MovieService
+import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -13,6 +16,7 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
 import java.net.URI
+import java.security.Principal
 
 @Configuration
 class MovieRouter(private val movieHandler: MovieHandler) {
@@ -55,10 +59,13 @@ class MovieHandler(private val movieService: MovieService) {
         val movieOpinion = request.awaitReceive<MovieOpinion>()
         val principal = request.awaitPrincipal()
             ?: throw AuthenticationException("Principal is missing.")
+        logger.debug { (principal as AuthenticationToken).principalWithUserId!!.userId.toString() }
         if (principal.name.isNullOrBlank()) {
             throw AuthenticationException("Username in principal is missing.")
         }
-        movieService.postOpinion(principal.name, movieOpinion)
+        val userId = retrieveUserId(principal)
+        val user = AuthenticatedUser(principal.name, userId)
+        movieService.postOpinion(user, movieOpinion)
         return ServerResponse.ok().buildAndAwait()
     }
 
@@ -70,7 +77,17 @@ class MovieHandler(private val movieService: MovieService) {
         if (principal.name.isNullOrBlank()) {
             throw AuthenticationException("Username in principal is missing.")
         }
-        movieService.removeOpinionForMovie(principal.name, movieOpinion)
+        val userId = retrieveUserId(principal)
+        val user = AuthenticatedUser(principal.name, userId)
+        movieService.removeOpinionForMovie(user, movieOpinion)
         return ServerResponse.ok().buildAndAwait()
+    }
+
+    private fun retrieveUserId(principal: Principal): Int {
+        val authenticationToken = principal as? AuthenticationToken
+        checkNotNull(authenticationToken) { "Principal cannot be casted to `AuthenticationToken`." }
+        val principalWithUserId = authenticationToken.principalWithUserId
+        checkNotNull(principalWithUserId) { "Principal is not authenticated." }
+        return principalWithUserId.userId
     }
 }

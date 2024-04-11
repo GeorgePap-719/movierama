@@ -1,9 +1,6 @@
 package org.example.interviewtemplate.services
 
-import org.example.interviewtemplate.dto.Movie
-import org.example.interviewtemplate.dto.MovieOpinion
-import org.example.interviewtemplate.dto.RegisterMovie
-import org.example.interviewtemplate.dto.toMovie
+import org.example.interviewtemplate.dto.*
 import org.example.interviewtemplate.entities.MovieEntity
 import org.example.interviewtemplate.entities.MovieOpinionEntity
 import org.example.interviewtemplate.repositories.MovieOpinionRepository
@@ -15,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional
 
 interface MovieService {
     suspend fun register(input: RegisterMovie): Movie
-    suspend fun postOpinion(username: String, movieOpinion: MovieOpinion)
-    suspend fun removeOpinionForMovie(username: String, movieOpinion: MovieOpinion)
+    suspend fun postOpinion(user: AuthenticatedUser, movieOpinion: MovieOpinion)
+    suspend fun removeOpinionForMovie(user: AuthenticatedUser, movieOpinion: MovieOpinion)
     suspend fun findMovieByTitle(target: String): Movie?
 }
 
@@ -47,11 +44,9 @@ class MovieServiceImpl(
     }
 
     @Transactional
-    override suspend fun postOpinion(username: String, movieOpinion: MovieOpinion) {
+    override suspend fun postOpinion(user: AuthenticatedUser, movieOpinion: MovieOpinion) {
         val movie = movieRepository.findByTitle(movieOpinion.title)
             ?: throw IllegalArgumentException("This title:${movieOpinion.title} does not exists.")
-        val user = userRepository.findByName(username)
-            ?: throw AuthenticationException("User with username:$username does not exists.")
         if (user.id == movie.userId) {
             throw IllegalArgumentException("A user cannot post an opinion for a movie he posted.")
         }
@@ -80,11 +75,12 @@ class MovieServiceImpl(
         movieRepository.postOpinionByMovie(movie.id, movieOpinion.opinion)
     }
 
-    override suspend fun removeOpinionForMovie(username: String, movieOpinion: MovieOpinion) {
+    override suspend fun removeOpinionForMovie(
+        user: AuthenticatedUser,
+        movieOpinion: MovieOpinion
+    ) {
         val movie = movieRepository.findByTitle(movieOpinion.title)
             ?: throw IllegalArgumentException("This title:${movieOpinion.title} does not exists.")
-        val user = userRepository.findByName(username)
-            ?: throw AuthenticationException("User with username:$username does not exists.")
         val opinions = movieOpinionRepository.findAllOpinionsByUser(user.id)
         val voted = opinions.find { it.movieId == movie.id }
         if (voted == null) {
@@ -94,8 +90,7 @@ class MovieServiceImpl(
     }
 
     override suspend fun findMovieByTitle(target: String): Movie? {
-        val entity = movieRepository.findByTitle(target)
-            ?: return null
+        val entity = movieRepository.findByTitle(target) ?: return null
         return entity.toMovie()
     }
 }

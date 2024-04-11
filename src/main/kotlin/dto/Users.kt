@@ -21,3 +21,5 @@ data class LoginUser(val name: String, val password: String)
 
 @Serializable
 data class LoggedUser(val name: String, val token: String)
+
+data class AuthenticatedUser(val name: String, val id: Int)
