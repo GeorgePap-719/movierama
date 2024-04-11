@@ -1,7 +1,9 @@
 package org.example.interviewtemplate.repositories
 
+import org.example.interviewtemplate.dto.Opinion
 import org.example.interviewtemplate.entities.MovieOpinionEntity
 import org.example.interviewtemplate.repositories.orm.mapToMovieOpinionEntities
+import org.example.interviewtemplate.repositories.util.checkForDoubleRowUpdate
 import org.example.interviewtemplate.repositories.util.checkForSingleRowUpdate
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
 import org.example.interviewtemplate.util.debug
@@ -15,6 +17,7 @@ interface MovieOpinionRepository {
     suspend fun save(input: MovieOpinionEntity): MovieOpinionEntity
     suspend fun updateOpinion(input: MovieOpinionEntity): Int
     suspend fun findAllOpinionsByUser(target: Int): List<MovieOpinionEntity>
+    suspend fun deleteOpinionByMovieId(target: Int, opinion: Opinion)
     suspend fun deleteById(target: Int)
     suspend fun deleteAll(): Int
 }
@@ -63,6 +66,21 @@ class MovieOpinionRepositoryImpl(
             "SELECT * FROM movierama.opinions where user_id=$target"
         }
         return mapToMovieOpinionEntities(spec)
+    }
+
+    override suspend fun deleteOpinionByMovieId(target: Int, opinion: Opinion) {
+        logger.debug { "Deleting movie with id:$target." }
+        val column = if (Opinion.HATE == opinion) "hates" else "likes"
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            """DELETE FROM movierama.opinions where movie_id=$target;
+                UPDATE movierama.movies
+                SET $column=$column - 1
+                where id=$target
+            """.trimMargin()
+        }
+        val updatedRows = spec.fetch().awaitRowsUpdated()
+        checkForDoubleRowUpdate(updatedRows)
     }
 
     override suspend fun deleteById(target: Int) {

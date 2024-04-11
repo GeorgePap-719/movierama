@@ -27,7 +27,7 @@ class MovieRouter(private val movieHandler: MovieHandler) {
             POST("api/movies", movieHandler::registerMovie)
             GET("api/movies/{title}", movieHandler::findMovieByTitle)
             POST("api/movies/opinion", movieHandler::postOpinion)
-            POST("api/movies/opinion/retract/", movieHandler::retractOpinion)
+            POST("api/movies/opinion/retract", movieHandler::retractOpinion)
         }
     }
 }

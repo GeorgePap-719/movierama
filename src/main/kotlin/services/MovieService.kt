@@ -60,19 +60,19 @@ class MovieServiceImpl(
         if (voted == null) {
             // Fast-path: save opinion.
             movieOpinionRepository.save(opinion)
-            movieRepository.postOpinionByMovie(movie.id, movieOpinion.opinion)
+            movieRepository.postOpinionByMovieId(movie.id, movieOpinion.opinion)
             return
         }
         // At this point, we know user has already voted for this movie.
         if (voted.opinion == movieOpinion.opinion) {
             throw IllegalArgumentException(
                 "You have already voted for this movie with:${movieOpinion.opinion}." +
-                        "Users can only vote once, and after that they can only swap" +
-                        " the vote or retract it"
+                        " Users can only vote once, and after that they can only swap" +
+                        " their vote or retract it"
             )
         }
         movieOpinionRepository.updateOpinion(opinion)
-        movieRepository.updateOpinionByMovie(movie.id, movieOpinion.opinion)
+        movieRepository.updateOpinionByMovieId(movie.id, movieOpinion.opinion)
     }
 
     override suspend fun removeOpinionForMovie(
@@ -86,7 +86,7 @@ class MovieServiceImpl(
         if (voted == null) {
             throw IllegalArgumentException("Users can only retract their vote.")
         }
-        movieRepository.deleteOpinionByMovie(movie.id, movieOpinion.opinion)
+        movieOpinionRepository.deleteOpinionByMovieId(movie.id, movieOpinion.opinion)
     }
 
     override suspend fun findMovieByTitle(target: String): Movie? {

@@ -16,9 +16,8 @@ interface MovieRepository {
     suspend fun save(input: MovieEntity): MovieEntity
     suspend fun findByTitle(target: String): MovieEntity?
     suspend fun findAll(): List<MovieEntity>
-    suspend fun postOpinionByMovie(target: Int, newOpinion: Opinion): Int
-    suspend fun updateOpinionByMovie(target: Int, newOpinion: Opinion): Int
-    suspend fun deleteOpinionByMovie(target: Int, opinion: Opinion)
+    suspend fun postOpinionByMovieId(target: Int, newOpinion: Opinion): Int
+    suspend fun updateOpinionByMovieId(target: Int, newOpinion: Opinion): Int
     suspend fun deleteAll(): Int
 }
 
@@ -58,7 +57,7 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
         TODO("Not yet implemented")
     }
 
-    override suspend fun postOpinionByMovie(target: Int, newOpinion: Opinion): Int {
+    override suspend fun postOpinionByMovieId(target: Int, newOpinion: Opinion): Int {
         val spec = when (newOpinion) {
             Opinion.LIKE -> {
                 template.databaseClient.sql {
@@ -87,7 +86,7 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
         return updatedRows.toInt()
     }
 
-    override suspend fun updateOpinionByMovie(target: Int, newOpinion: Opinion): Int {
+    override suspend fun updateOpinionByMovieId(target: Int, newOpinion: Opinion): Int {
         val spec = when (newOpinion) {
             Opinion.LIKE -> {
                 template.databaseClient.sql {
@@ -114,16 +113,6 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
         val updatedRows = spec.fetch().awaitRowsUpdated()
         checkForSingleRowUpdate(updatedRows)
         return updatedRows.toInt()
-    }
-
-    override suspend fun deleteOpinionByMovie(target: Int, opinion: Opinion) {
-        logger.debug { "Deleting movie with id:$target." }
-        val spec = template.databaseClient.sql {
-            //language=MySQL
-            "DELETE FROM movierama.movies where id=$target"
-        }
-        val updatedRows = spec.fetch().awaitRowsUpdated()
-        checkForSingleRowUpdate(updatedRows)
     }
 
     override suspend fun deleteAll(): Int {

@@ -20,3 +20,9 @@ fun checkForSingleRowUpdate(rows: Long) {
         "Expected rows to be affected is one but updated:$rows."
     }
 }
+
+fun checkForDoubleRowUpdate(rows: Long) {
+    check(rows == 2L) {
+        "Expected rows to be affected is two but updated:$rows."
+    }
+}
