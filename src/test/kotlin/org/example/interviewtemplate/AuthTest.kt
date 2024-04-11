@@ -23,7 +23,7 @@ import kotlin.test.assertNotNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AuthConfigTest(
+class AuthTest(
     @Autowired
     private val webClient: WebClient,
     @LocalServerPort
