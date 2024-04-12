@@ -28,6 +28,7 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.security.web.server.authentication.WebFilterChainServerAuthenticationSuccessHandler
 import org.springframework.security.web.server.authorization.AuthorizationContext
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
+import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 import java.security.Principal
@@ -46,6 +47,11 @@ class AuthConfig(
     fun apiHttpSecurity(http: ServerHttpSecurity): SecurityWebFilterChain {
         return http
             .csrf { csrf -> csrf.disable() }
+            .cors {
+                it.configurationSource {
+                    CorsConfiguration().apply { applyPermitDefaultValues() }
+                }
+            }
             .authorizeExchange { auth ->
                 auth.pathMatchers("api/auth/login").permitAll()
                 auth.pathMatchers("api/auth/register").permitAll()
