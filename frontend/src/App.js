@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import './App.css';
 
 function App() {
+
   const [movies, setMovies] = useState([]);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -12,21 +13,16 @@ function App() {
 
   useEffect(() => {
     fetchMoviesFromBackend();
-  }, [loggedIn]); // Fetch movies whenever user logs in
+  }, []);
 
   const fetchMoviesFromBackend = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/movies', {
-        mode: 'no-cors', // Disable cors.
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch('http://localhost:8080/api/movies', {});
       if (!response.ok) {
         throw new Error('Failed to fetch movies');
       }
       const data = await response.json();
-      setMovies(data.movies);
+      setMovies(data);
     } catch (error) {
       console.error('Error fetching movies:', error);
     }
@@ -104,15 +100,30 @@ function App() {
           </div>
           <h1>Browse Movies</h1>
         </header>
+        {/*<main>*/}
+        {/*  <div className="movie-list">*/}
+        {/*    {movies.map(movie => (*/}
+        {/*        <div key={movie.title} className="movie">*/}
+        {/*          <div className="movie-details">*/}
+        {/*            <p>{movie.description}</p>*/}
+        {/*            <p>{movie.likes}</p>*/}
+        {/*            <p>{movie.hates}</p>*/}
+        {/*            <p>Release Date: {movie.date}</p>*/}
+        {/*          </div>*/}
+        {/*        </div>*/}
+        {/*    ))}*/}
+        {/*  </div>*/}
+        {/*</main>*/}
         <main>
           <div className="movie-list">
             {movies.map(movie => (
                 <div key={movie.id} className="movie">
-                  <img src={movie.poster} alt={movie.title}/>
+                  <h2 className="movie-title">{movie.title}</h2>
                   <div className="movie-details">
-                    <h2>{movie.title}</h2>
-                    <p>{movie.description}</p>
-                    <p>Release Date: {movie.releaseDate}</p>
+                    <p><strong>Description:</strong> {movie.description}</p>
+                    <p><strong>Likes:</strong> {movie.likes}</p>
+                    <p><strong>Hates:</strong> {movie.hates}</p>
+                    <p><strong>Release Date:</strong> {movie.date}</p>
                   </div>
                 </div>
             ))}
