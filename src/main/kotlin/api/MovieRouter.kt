@@ -1,5 +1,6 @@
 package org.example.interviewtemplate.api
 
+import kotlinx.coroutines.reactor.awaitSingle
 import org.example.interviewtemplate.api.utils.awaitReceive
 import org.example.interviewtemplate.api.utils.pathVariableOrNull
 import org.example.interviewtemplate.config.AuthenticationToken
@@ -10,8 +11,10 @@ import org.example.interviewtemplate.services.AuthenticationException
 import org.example.interviewtemplate.services.MovieService
 import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
+import org.example.interviewtemplate.util.toMono
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
@@ -26,7 +29,7 @@ class MovieRouter(private val movieHandler: MovieHandler) {
         accept(MediaType.APPLICATION_JSON).nest {
             POST("api/movies", movieHandler::registerMovie)
             GET("api/movies/{title}", movieHandler::findMovieByTitle)
-            GET("api/movies/", movieHandler::findAllMovies)
+            GET("api/movies", movieHandler::findAllMovies)
             POST("api/movies/opinion", movieHandler::postOpinion)
             POST("api/movies/opinion/retract", movieHandler::retractOpinion)
         }
@@ -60,6 +63,9 @@ class MovieHandler(private val movieService: MovieService) {
         val movies = movieService.findAll()
         return ServerResponse.ok().bodyValueAndAwait(movies)
     }
+
+    private suspend inline fun <reified T : Any> ServerResponse.BodyBuilder.bodyValueAndAwait(body: T): ServerResponse =
+        body(body.toMono(), object : ParameterizedTypeReference<T>() {}).awaitSingle()
 
     suspend fun postOpinion(request: ServerRequest): ServerResponse {
         logger.info("request: api/movies/opinion")
