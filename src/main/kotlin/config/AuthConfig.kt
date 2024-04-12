@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.authorization.AuthorizationDecision
 import org.springframework.security.authorization.ReactiveAuthorizationManager
@@ -25,7 +26,6 @@ import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler
-import org.springframework.security.web.server.authentication.WebFilterChainServerAuthenticationSuccessHandler
 import org.springframework.security.web.server.authorization.AuthorizationContext
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.cors.CorsConfiguration
@@ -48,9 +48,7 @@ class AuthConfig(
         return http
             .csrf { csrf -> csrf.disable() }
             .cors {
-                it.configurationSource {
-                    CorsConfiguration().apply { applyPermitDefaultValues() }
-                }
+                it.configurationSource { CorsConfiguration().apply { applyPermitDefaultValues() } }
             }
             .authorizeExchange { auth ->
                 auth.pathMatchers("api/auth/login").permitAll()
@@ -64,27 +62,27 @@ class AuthConfig(
 
     private fun authWebFilter(): AuthenticationWebFilter {
         return AuthenticationWebFilter(AuthenticationManager()).apply {
-            val failureHandler = ServerAuthenticationEntryPointFailureHandler(
-                BearerTokenServerAuthenticationEntryPoint()
-            )
-            setAuthenticationFailureHandler(failureHandler)
-            setAuthenticationSuccessHandler(WebFilterChainServerAuthenticationSuccessHandler())
-            setServerAuthenticationConverter(ServerAuthenticationConverterImpl())
             setRequiresAuthenticationMatcher {
                 ServerWebExchangeMatchers
                     .pathMatchers("api/movies/**", "api/users/**")
                     .matches(it)
             }
+            val failureHandler = ServerAuthenticationEntryPointFailureHandler(
+                BearerTokenServerAuthenticationEntryPoint()
+            )
+            setAuthenticationFailureHandler(failureHandler)
+            setServerAuthenticationConverter(ServerAuthenticationConverterImpl())
         }
     }
 
     inner class ServerAuthenticationConverterImpl : ServerAuthenticationConverter {
         override fun convert(exchange: ServerWebExchange): Mono<Authentication> {
             return mono {
-                exchange.getPrincipal<Principal>().awaitSingleOrNull()?.let {
-                    logger.debug { "Received principal with name:${it.name}." }
+                val request = exchange.request
+                // Add exception for GET `/api/movies` path.
+                if (request.path.toString() == "/api/movies" && request.method == HttpMethod.GET) {
+                    return@mono AuthenticationToken(null, true)
                 }
-                //..
                 val token = tryRetrieveToken(exchange.request.headers)
                 val username = authService.authorize(token)
                 logger.debug { "Verified token for user:$username" }

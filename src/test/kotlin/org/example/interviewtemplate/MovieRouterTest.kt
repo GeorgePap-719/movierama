@@ -116,6 +116,35 @@ class MovieRouterTest(
     }
 
     @Test
+    fun testFindAllMovies(): Unit = runBlocking {
+        val user = prepareUser()
+        repeat(10) {
+            val newMovie = RegisterMovie(
+                "movie" + randomName(),
+                "cool one",
+                user.id
+            )
+            val newMovieResponse = webClient.post()
+                .uri("$baseUrl/movies")
+                .accept(MediaType.APPLICATION_JSON)
+                .headers { it.setBearerAuth(user.info.token) }
+                .bodyValue(newMovie)
+                .awaitRetrieveEntity<Movie>()
+            assert(newMovieResponse.statusCode.value() == 201)
+            assertNotNull(newMovieResponse.body)
+
+        }
+        // Note here we make a request without authorization.
+        val response = webClient.get()
+            .uri("$baseUrl/movies")
+            .accept(MediaType.APPLICATION_JSON)
+            .awaitRetrieveEntity<List<Movie>>()
+        assert(response.statusCode.value() == 200)
+        val body = assertNotNull(response.body)
+        assert(body.size == 10)
+    }
+
+    @Test
     fun testPostOpinion(): Unit = runBlocking {
         val user1 = prepareUser()
         val newMovie = RegisterMovie(
