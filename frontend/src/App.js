@@ -120,6 +120,7 @@ function App() {
                 <div key={movie.id} className="movie">
                   <h2 className="movie-title">{movie.title}</h2>
                   <div className="movie-details">
+                    <p><strong>Posted by:</strong> {movie.posted_by_user}</p>
                     <p><strong>Description:</strong> {movie.description}</p>
                     <p><strong>Likes:</strong> {movie.likes}</p>
                     <p><strong>Hates:</strong> {movie.hates}</p>

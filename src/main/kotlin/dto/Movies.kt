@@ -48,3 +48,17 @@ enum class Opinion {
     LIKE,
     HATE
 }
+
+@Serializable
+data class MovieWithUser(
+    val title: String,
+    val description: String,
+    @SerialName("posted_by_user")
+    val postedByUser: String,
+    /**
+     * Represents the date it was registered.
+     */
+    val date: String,
+    val likes: Int,
+    val hates: Int
+)

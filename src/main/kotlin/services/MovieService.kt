@@ -5,6 +5,7 @@ import org.example.interviewtemplate.entities.MovieEntity
 import org.example.interviewtemplate.entities.MovieOpinionEntity
 import org.example.interviewtemplate.repositories.MovieOpinionRepository
 import org.example.interviewtemplate.repositories.MovieRepository
+import org.example.interviewtemplate.repositories.UserRepository
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,13 +15,14 @@ interface MovieService {
     suspend fun postOpinion(user: AuthenticatedUser, movieOpinion: MovieOpinion)
     suspend fun removeOpinionForMovie(user: AuthenticatedUser, movieOpinion: MovieOpinion)
     suspend fun findMovieByTitle(target: String): Movie?
-    suspend fun findAll(): List<Movie>
+    suspend fun findAll(): List<MovieWithUser>
 }
 
 @Service
 class MovieServiceImpl(
     private val movieRepository: MovieRepository,
-    private val movieOpinionRepository: MovieOpinionRepository
+    private val movieOpinionRepository: MovieOpinionRepository,
+    private val userRepository: UserRepository
 ) : MovieService {
     override suspend fun register(input: RegisterMovie): Movie {
         val movie = MovieEntity(
@@ -93,7 +95,20 @@ class MovieServiceImpl(
         return entity.toMovie()
     }
 
-    override suspend fun findAll(): List<Movie> {
-        return movieRepository.findAll().map { it.toMovie() }
+    override suspend fun findAll(): List<MovieWithUser> {
+        val movies = movieRepository.findAll().map { it.toMovie() }
+        val ids = movies.map { it.userId }
+        val storedUsers = userRepository.findAllById(ids)
+        return movies.map { movie ->
+            val user = storedUsers.find { it.id == movie.userId } ?: error("unexpected")
+            MovieWithUser(
+                movie.title,
+                movie.description,
+                user.name,
+                movie.date,
+                movie.likes,
+                movie.hates
+            )
+        }
     }
 }

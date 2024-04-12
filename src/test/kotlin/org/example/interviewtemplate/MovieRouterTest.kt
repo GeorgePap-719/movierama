@@ -138,10 +138,13 @@ class MovieRouterTest(
         val response = webClient.get()
             .uri("$baseUrl/movies")
             .accept(MediaType.APPLICATION_JSON)
-            .awaitRetrieveEntity<List<Movie>>()
+            .awaitRetrieveEntity<List<MovieWithUser>>()
+        println(response.statusCode)
+        println(response.body)
         assert(response.statusCode.value() == 200)
         val body = assertNotNull(response.body)
         assert(body.size == 10)
+        println(body)
     }
 
     @Test
