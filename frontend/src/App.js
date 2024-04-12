@@ -6,10 +6,15 @@ function App() {
   const [movies, setMovies] = useState([]);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSubmitMovieButton, setShowSubmitMovieButton] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [userId, setUserId] = useState(-1);
   const [token, setToken] = useState('');
+  // Movie fields.
+  const [movieTitle, setNewMovieTitle] = useState('');
+  const [movieDescription, setNewMovieDescription] = useState('');
 
   useEffect(() => {
     fetchMoviesFromBackend();
@@ -84,9 +89,40 @@ function App() {
       setToken(data.token);
       console.log('User logged in successfully');
       setLoggedIn(true);
+      setShowSubmitMovieButton(true)
+      setUserId(data.id)
       closeLoginModal();
     } catch (error) {
       console.error('Error logging in:', error);
+    }
+  };
+
+  let movie = {
+    title: movieTitle,
+    description: movieDescription,
+    user_id: userId
+  };
+
+  const handleNewMovieSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await fetch('http://localhost:8080/api/movies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(movie),
+      });
+      if (!response.ok) {
+        throw new Error('Failed post new movie');
+      }
+      const data = await response.json();
+      console.log("Added new movie successfully.")
+      // Refresh movies.
+      await fetchMoviesFromBackend()
+    } catch (error) {
+      console.error('Error adding new movie:', error);
     }
   };
 
@@ -97,23 +133,12 @@ function App() {
             {!loggedIn && <button onClick={handleSignUpClick}>Sign Up</button>}
             {!loggedIn && <button onClick={handleLoginClick}>Login</button>}
             {loggedIn && <span>Welcome, {username}</span>}
+            {loggedIn && <button
+                onClick={() => setShowSubmitMovieButton(true)}> New
+              movie </button>}
           </div>
           <h1>Browse Movies</h1>
         </header>
-        {/*<main>*/}
-        {/*  <div className="movie-list">*/}
-        {/*    {movies.map(movie => (*/}
-        {/*        <div key={movie.title} className="movie">*/}
-        {/*          <div className="movie-details">*/}
-        {/*            <p>{movie.description}</p>*/}
-        {/*            <p>{movie.likes}</p>*/}
-        {/*            <p>{movie.hates}</p>*/}
-        {/*            <p>Release Date: {movie.date}</p>*/}
-        {/*          </div>*/}
-        {/*        </div>*/}
-        {/*    ))}*/}
-        {/*  </div>*/}
-        {/*</main>*/}
         <main>
           <div className="movie-list">
             {movies.map(movie => (
@@ -124,7 +149,8 @@ function App() {
                     <p><strong>Description:</strong> {movie.description}</p>
                     <p><strong>Likes:</strong> {movie.likes}</p>
                     <p><strong>Hates:</strong> {movie.hates}</p>
-                    <p><strong>Release Date:</strong> {movie.date}</p>
+                    <p><strong>Release Date:</strong> {new Date(
+                        movie.date).toLocaleString()}</p>
                   </div>
                 </div>
             ))}
@@ -169,6 +195,29 @@ function App() {
                            onChange={(e) => setPassword(e.target.value)}/>
                   </div>
                   <button type="submit">Login</button>
+                </form>
+              </div>
+            </div>
+        )}
+        {showSubmitMovieButton && (
+            <div className="modal">
+              <div className="modal-content">
+                <span className="close" onClick={() => setShowSubmitMovieButton(
+                    false)}>&times;</span>
+                <h2>New Movie</h2>
+                <form onSubmit={handleNewMovieSubmit}>
+                  <div className="form-group">
+                    <label htmlFor="newMovieTitle">Title:</label>
+                    <input type="text" id="newMovieTitle" value={movieTitle}
+                           onChange={(e) => setNewMovieTitle(e.target.value)}/>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="newMovieDescription">Description:</label>
+                    <textarea id="newMovieDescription" value={movieDescription}
+                              onChange={(e) => setNewMovieDescription(
+                                  e.target.value)}/>
+                  </div>
+                  <button type="submit">Add Movie</button>
                 </form>
               </div>
             </div>
