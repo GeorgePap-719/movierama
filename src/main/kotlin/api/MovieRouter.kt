@@ -26,6 +26,7 @@ class MovieRouter(private val movieHandler: MovieHandler) {
         accept(MediaType.APPLICATION_JSON).nest {
             POST("api/movies", movieHandler::registerMovie)
             GET("api/movies/{title}", movieHandler::findMovieByTitle)
+            GET("api/movies/", movieHandler::findAllMovies)
             POST("api/movies/opinion", movieHandler::postOpinion)
             POST("api/movies/opinion/retract", movieHandler::retractOpinion)
         }
@@ -37,7 +38,7 @@ class MovieHandler(private val movieService: MovieService) {
     private val logger = logger()
 
     suspend fun registerMovie(request: ServerRequest): ServerResponse {
-        logger.info("request: api/movies")
+        logger.info("request: POST api/movies")
         val movie = request.awaitReceive<RegisterMovie>()
         val registeredMovie = movieService.register(movie)
         return ServerResponse
@@ -52,6 +53,12 @@ class MovieHandler(private val movieService: MovieService) {
         val movie = movieService.findMovieByTitle(title)
             ?: return ServerResponse.notFound().buildAndAwait()
         return ServerResponse.ok().bodyValueAndAwait(movie)
+    }
+
+    suspend fun findAllMovies(request: ServerRequest): ServerResponse {
+        logger.info("request: GET api/movies/")
+        val movies = movieService.findAll()
+        return ServerResponse.ok().bodyValueAndAwait(movies)
     }
 
     suspend fun postOpinion(request: ServerRequest): ServerResponse {

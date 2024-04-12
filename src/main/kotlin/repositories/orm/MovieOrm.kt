@@ -1,9 +1,29 @@
 package org.example.interviewtemplate.repositories.orm
 
+import kotlinx.coroutines.flow.toList
 import org.example.interviewtemplate.entities.MovieEntity
 import org.example.interviewtemplate.repositories.util.getColumn
+import org.example.interviewtemplate.util.nullableAsFlow
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.awaitSingleOrNull
+
+suspend fun mapToMovieEntities(spec: DatabaseClient.GenericExecuteSpec): List<MovieEntity> {
+    val fetchSpec = spec.map { row, metadata ->
+        buildMovie {
+            check(metadata.columnMetadatas.size == 7) {
+                "Size should be equal of `MovieEntity` fields, but got:${metadata.columnMetadatas.size}."
+            }
+            id = row.getColumn<Int>("id")
+            title = row.getColumn<String>("title")
+            description = row.getColumn<String>("description")
+            userId = row.getColumn<Int>("user_id")
+            date = row.getColumn<String>("date")
+            likes = row.getColumn<Int>("likes")
+            hates = row.getColumn<Int>("hates")
+        }
+    }
+    return fetchSpec.all().nullableAsFlow().toList()
+}
 
 suspend fun mapToMovieEntity(spec: DatabaseClient.GenericExecuteSpec): MovieEntity? {
     return buildMovie {

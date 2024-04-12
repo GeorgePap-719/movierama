@@ -5,7 +5,6 @@ import org.example.interviewtemplate.entities.MovieEntity
 import org.example.interviewtemplate.entities.MovieOpinionEntity
 import org.example.interviewtemplate.repositories.MovieOpinionRepository
 import org.example.interviewtemplate.repositories.MovieRepository
-import org.example.interviewtemplate.repositories.UserRepository
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,12 +14,12 @@ interface MovieService {
     suspend fun postOpinion(user: AuthenticatedUser, movieOpinion: MovieOpinion)
     suspend fun removeOpinionForMovie(user: AuthenticatedUser, movieOpinion: MovieOpinion)
     suspend fun findMovieByTitle(target: String): Movie?
+    suspend fun findAll(): List<Movie>
 }
 
 @Service
 class MovieServiceImpl(
     private val movieRepository: MovieRepository,
-    private val userRepository: UserRepository,
     private val movieOpinionRepository: MovieOpinionRepository
 ) : MovieService {
     override suspend fun register(input: RegisterMovie): Movie {
@@ -92,5 +91,9 @@ class MovieServiceImpl(
     override suspend fun findMovieByTitle(target: String): Movie? {
         val entity = movieRepository.findByTitle(target) ?: return null
         return entity.toMovie()
+    }
+
+    override suspend fun findAll(): List<Movie> {
+        return movieRepository.findAll().map { it.toMovie() }
     }
 }

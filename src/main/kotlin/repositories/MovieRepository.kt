@@ -2,6 +2,7 @@ package org.example.interviewtemplate.repositories
 
 import org.example.interviewtemplate.dto.Opinion
 import org.example.interviewtemplate.entities.MovieEntity
+import org.example.interviewtemplate.repositories.orm.mapToMovieEntities
 import org.example.interviewtemplate.repositories.orm.mapToMovieEntity
 import org.example.interviewtemplate.repositories.util.checkForSingleRowUpdate
 import org.example.interviewtemplate.repositories.util.saveAndReturnGeneratedId
@@ -54,7 +55,11 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
     }
 
     override suspend fun findAll(): List<MovieEntity> {
-        TODO("Not yet implemented")
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "SELECT * FROM movierama.movies"
+        }
+        return mapToMovieEntities(spec)
     }
 
     override suspend fun postOpinionByMovieId(target: Int, newOpinion: Opinion): Int {
