@@ -69,7 +69,7 @@ class AuthServiceImpl(
             .issuer(issuer)
             .subject(username)
             // Make it valid for 1 hour.
-            .expirationTime(Date(Date().time + 60 * 1000))
+            .expirationTime(Date(Date().time + 60 * 10000))
             .build()
         val signedJwt = SignedJWT(JWSHeader(JWSAlgorithm.HS256), claimsSet)
         // Apply the HMAC protection.
