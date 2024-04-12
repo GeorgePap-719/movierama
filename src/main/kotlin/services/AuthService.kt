@@ -58,7 +58,7 @@ class AuthServiceImpl(
         val user = userRepository.findByName(input.name) ?: return null
         if (!checkpw(input.password, user.encryptedPassword)) throw AuthenticationException()
         val token = createJwt(sharedKey, user.name)
-        return LoggedUser(name = user.name, token = token)
+        return LoggedUser(name = user.name, token = token, id = user.id)
     }
 
     private fun createJwt(secret: ByteArray, username: String): String {

@@ -20,6 +20,6 @@ data class RegisterUser(val name: String, val password: String) {
 data class LoginUser(val name: String, val password: String)
 
 @Serializable
-data class LoggedUser(val name: String, val token: String)
+data class LoggedUser(val name: String, val token: String, val id: Int)
 
 data class AuthenticatedUser(val name: String, val id: Int)
