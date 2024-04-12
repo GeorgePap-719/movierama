@@ -1,23 +1,166 @@
-import logo from './logo.svg';
+import React, {useEffect, useState} from 'react';
 import './App.css';
 
 function App() {
+  const [movies, setMovies] = useState([]);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
+
+  useEffect(() => {
+    fetchMoviesFromBackend();
+  }, [loggedIn]); // Fetch movies whenever user logs in
+
+  const fetchMoviesFromBackend = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/movies', {
+        mode: 'no-cors', // Disable cors.
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch movies');
+      }
+      const data = await response.json();
+      setMovies(data.movies);
+    } catch (error) {
+      console.error('Error fetching movies:', error);
+    }
+  };
+
+  const handleSignUpClick = () => {
+    setShowSignUpModal(true);
+  };
+
+  const handleLoginClick = () => {
+    setShowLoginModal(true);
+  };
+
+  const closeSignUpModal = () => {
+    setShowSignUpModal(false);
+  };
+
+  const closeLoginModal = () => {
+    setShowLoginModal(false);
+  };
+
+  const handleSignUpSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/register', {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({name: username, password})
+      });
+      if (!response.ok) {
+        const error = response.toString()
+        console.log(error)
+        throw new Error('Failed to register user');
+      }
+      console.log('User registered successfully');
+      closeSignUpModal();
+    } catch (error) {
+      console.error('Error registering user:', error);
+    }
+  };
+
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({name: username, password}),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to login');
+      }
+      const data = await response.json();
+      setToken(data.token);
+      console.log('User logged in successfully');
+      setLoggedIn(true);
+      closeLoginModal();
+    } catch (error) {
+      console.error('Error logging in:', error);
+    }
+  };
+
   return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo"/>
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-              className="App-link"
-              href="https://reactjs.org"
-              target="_blank"
-              rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
+          <div className="header-buttons">
+            {!loggedIn && <button onClick={handleSignUpClick}>Sign Up</button>}
+            {!loggedIn && <button onClick={handleLoginClick}>Login</button>}
+            {loggedIn && <span>Welcome, {username}</span>}
+          </div>
+          <h1>Browse Movies</h1>
         </header>
+        <main>
+          <div className="movie-list">
+            {movies.map(movie => (
+                <div key={movie.id} className="movie">
+                  <img src={movie.poster} alt={movie.title}/>
+                  <div className="movie-details">
+                    <h2>{movie.title}</h2>
+                    <p>{movie.description}</p>
+                    <p>Release Date: {movie.releaseDate}</p>
+                  </div>
+                </div>
+            ))}
+          </div>
+        </main>
+        {showSignUpModal && (
+            <div className="modal">
+              <div className="modal-content">
+                <span className="close"
+                      onClick={closeSignUpModal}>&times;</span>
+                <h2>Sign Up</h2>
+                <form onSubmit={handleSignUpSubmit}>
+                  <div className="form-group">
+                    <label htmlFor="username">Username:</label>
+                    <input type="text" id="username" value={username}
+                           onChange={(e) => setUsername(e.target.value)}/>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="password">Password:</label>
+                    <input type="password" id="password" value={password}
+                           onChange={(e) => setPassword(e.target.value)}/>
+                  </div>
+                  <button type="submit">Sign Up</button>
+                </form>
+              </div>
+            </div>
+        )}
+        {showLoginModal && (
+            <div className="modal">
+              <div className="modal-content">
+                <span className="close" onClick={closeLoginModal}>&times;</span>
+                <h2>Login</h2>
+                <form onSubmit={handleLoginSubmit}>
+                  <div className="form-group">
+                    <label htmlFor="username">Username:</label>
+                    <input type="text" id="username" value={username}
+                           onChange={(e) => setUsername(e.target.value)}/>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="password">Password:</label>
+                    <input type="password" id="password" value={password}
+                           onChange={(e) => setPassword(e.target.value)}/>
+                  </div>
+                  <button type="submit">Login</button>
+                </form>
+              </div>
+            </div>
+        )}
       </div>
   );
 }

@@ -15,4 +15,4 @@ Note: All other features seem like fe.
     // - [x] A user cannot post opinion for a movie he submitted.
     // - [x] A user can change opinion for a move he posted an opinion.
     // - [x] A user cannot post the same opinion for the same movie, only change it or retract it.
-    // - [] A user can only retract their opinion.
+    // - [x] A user can only retract their opinion.
