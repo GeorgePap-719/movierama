@@ -89,7 +89,6 @@ function App() {
       setToken(data.token);
       console.log('User logged in successfully');
       setLoggedIn(true);
-      setShowSubmitMovieButton(true)
       setUserId(data.id)
       closeLoginModal();
     } catch (error) {
@@ -115,7 +114,8 @@ function App() {
         body: JSON.stringify(movie),
       });
       if (!response.ok) {
-        throw new Error('Failed post new movie');
+        console.log(await response.json())
+        throw new Error(`Failed post new movie`);
       }
       const data = await response.json();
       console.log("Added new movie successfully.")
