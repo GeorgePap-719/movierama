@@ -18,7 +18,6 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.*
-import java.net.URI
 import java.security.Principal
 
 @Configuration
@@ -45,7 +44,7 @@ class MovieHandler(private val movieService: MovieService) {
         val movie = request.awaitReceive<RegisterMovie>()
         val registeredMovie = movieService.register(movie)
         return ServerResponse
-            .created(URI.create("api/movies/${movie.title}"))
+            .status(201)
             .bodyValueAndAwait(registeredMovie)
     }
 
