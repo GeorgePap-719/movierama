@@ -47,7 +47,8 @@
 
 .like-link,
 .hate-link,
-.opinion-link {
+.opinion-link,
+.user-name {
   color: blue; /* Change the color to your preference */
   cursor: pointer;
   text-decoration: underline;

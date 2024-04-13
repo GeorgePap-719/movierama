@@ -177,7 +177,7 @@ class MovieRouterTest(
         }
         // Note here we make a request without authorization.
         val response = webClient.get()
-            .uri("$baseUrl/movies/${user1.id}/all")
+            .uri("$baseUrl/movies/by/${user1.id}/all")
             .accept(MediaType.APPLICATION_JSON)
             .awaitRetrieveEntity<List<MovieWithUser>>()
         assert(response.statusCode.value() == 200)

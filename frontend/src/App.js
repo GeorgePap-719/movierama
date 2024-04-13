@@ -34,6 +34,20 @@ function App() {
     }
   };
 
+  const fetchMoviesFromBackendByUser = async (user) => {
+    try {
+      const response = await fetch(
+          `http://localhost:8080/api/movies/by/${user.id}/all`, {});
+      if (!response.ok) {
+        throw new Error(`Failed to fetch movies by user:${user.id}`);
+      }
+      const data = await response.json();
+      setMovies(data);
+    } catch (error) {
+      console.error('Error fetching movies by user:', error);
+    }
+  };
+
   const fetchOpinions = async (token) => {
     try {
       const response = await fetch(
@@ -83,9 +97,9 @@ function App() {
         body: JSON.stringify({name: username, password})
       });
       if (!response.ok) {
-        const error = response.toString()
-        console.log(error)
-        throw new Error('Failed to register user');
+        let error = await response.json()
+        console.log("Failed to register with:", error)
+        throw new Error(`Failed to register user`);
       }
       console.log('User registered successfully');
       closeSignUpModal();
@@ -165,7 +179,7 @@ function App() {
       });
       if (!response.ok) {
         console.log(await response.json())
-        throw new Error(`Failed post opinion wit error: ${response.body}`);
+        throw new Error(`Failed post opinion with error: ${response.body}`);
       }
       console.log(`Liked movie with title: ${movieTitle}`)
       // Refresh movies.
@@ -252,7 +266,14 @@ function App() {
                 <div key={movie.id} className="movie">
                   <h2 className="movie-title">{movie.title}</h2>
                   <div className="movie-details">
-                    <p><strong>Posted by:</strong> {movie.posted_by_user.name}
+                    <p>
+
+                      <span onClick={() =>
+                          fetchMoviesFromBackendByUser(movie.posted_by_user)}
+                            className="user-name">
+                         <strong>Posted by:</strong>
+                      </span>
+                      {movie.posted_by_user.name}
                     </p>
                     <p><strong>Description:</strong> {movie.description}</p>
                     <p>

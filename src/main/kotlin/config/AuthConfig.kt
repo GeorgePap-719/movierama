@@ -83,7 +83,7 @@ class AuthConfig(
                 if (request.path.toString() == "/api/movies" && request.method == HttpMethod.GET) {
                     return@mono AuthenticationToken(null, true)
                 }
-                val matches = Regex("^/api/movies/\\d+/all$").matches(request.path.toString())
+                val matches = Regex("^/api/movies/by/\\d+/all$").matches(request.path.toString())
                 if (matches && request.method == HttpMethod.GET) {
                     return@mono AuthenticationToken(null, true)
                 }
