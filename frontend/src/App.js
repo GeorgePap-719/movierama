@@ -4,6 +4,7 @@ import './App.css';
 function App() {
 
   const [movies, setMovies] = useState([]);
+  const [opinions, setOpinions] = useState([]);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSubmitMovieButton, setShowSubmitMovieButton] = useState(false);
@@ -30,6 +31,27 @@ function App() {
       setMovies(data);
     } catch (error) {
       console.error('Error fetching movies:', error);
+    }
+  };
+
+  const fetchOpinions = async (token) => {
+    try {
+      const response = await fetch(
+          'http://localhost:8080/api/movies/opinions/all', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            }
+          });
+      if (!response.ok) {
+        let error = await response.json()
+        throw new Error(`Failed to fetch opinions: ${error}`);
+      }
+      const data = await response.json();
+      setOpinions(data);
+    } catch (error) {
+      console.error('Error fetching opinions:', error);
     }
   };
 
@@ -91,6 +113,7 @@ function App() {
       setLoggedIn(true);
       setUserId(data.id)
       closeLoginModal();
+      await fetchOpinions(data.token)
     } catch (error) {
       console.error('Error logging in:', error);
     }
@@ -147,6 +170,7 @@ function App() {
       console.log(`Liked movie with title: ${movieTitle}`)
       // Refresh movies.
       await fetchMoviesFromBackend()
+      await fetchOpinions(token)
     } catch (error) {
       console.error('Error hating movie:', error);
     }
@@ -173,8 +197,39 @@ function App() {
       console.log(`Hated movie with title: ${movieTitle}`);
       // Refresh movies.
       await fetchMoviesFromBackend()
+      await fetchOpinions(token)
     } catch (error) {
       console.error('Error hating movie:', error);
+    }
+  };
+
+  const opinionForMovie = (movieId) => {
+    return opinions.find(opinion => opinion.movie_id === movieId);
+  };
+
+  const hasOpinionForMovie = (movieId) => {
+    return opinions.some(opinion => opinion.movie_id === movieId);
+  };
+
+  const handleRetractOpinionClick = async (title, opinion) => {
+    try {
+      const response = await fetch(
+          'http://localhost:8080/api/movies/opinion/retract', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({title, opinion}),
+          });
+      if (!response.ok) {
+        let error = await response.json()
+        throw new Error(`Failed to retract opinion: ${error}`);
+      }
+      await fetchOpinions(token)
+      await fetchMoviesFromBackend()
+    } catch (error) {
+      console.error('Error retracting opinion:', error);
     }
   };
 
@@ -230,9 +285,20 @@ function App() {
                           movie.hates
                       )}
                     </p>
-                    <p><strong>Release Date:</strong> {new Date(
-                        movie.date * 1).toLocaleString()}</p>
+                    <p>
+                      <strong>Release Date:</strong>
+                      {new Date(movie.date * 1).toLocaleString()}
+                    </p>
                   </div>
+                  <p>
+                    {hasOpinionForMovie(movie.id) && (
+                        <span onClick={() => handleRetractOpinionClick(
+                            movie.title,
+                            opinionForMovie(movie.id).opinion)}
+                              className="opinion-link">You {opinionForMovie(
+                            movie.id).opinion.toLocaleLowerCase()} this move.</span>)
+                    }
+                  </p>
                 </div>
             ))}
           </div>
