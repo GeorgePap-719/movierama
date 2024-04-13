@@ -126,6 +126,38 @@ function App() {
     }
   };
 
+  const handleLike = async (movieTitle) => {
+    let opinion = {
+      title: movieTitle,
+      opinion: "LIKE"
+    }
+    try {
+      const response = await fetch('http://localhost:8080/api/movies/opinion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(opinion),
+      });
+      if (!response.ok) {
+        console.log(await response.json())
+        throw new Error(`Failed post opinion wit error: ${response.body}`);
+      }
+      console.log(`Liked movie with title: ${movieTitle}`)
+      // Refresh movies.
+      await fetchMoviesFromBackend()
+    } catch (error) {
+      console.error('Error hating movie:', error);
+    }
+  };
+
+  const handleHate = (movieId) => {
+    // Implement action for hating a movie
+    console.log(`Hated movie with Id: ${movieId}`);
+    // You can perform any action here, such as sending a request to the backend to increment hates for the movie
+  };
+
   return (
       <div className="App">
         <header className="App-header">
@@ -145,10 +177,28 @@ function App() {
                 <div key={movie.id} className="movie">
                   <h2 className="movie-title">{movie.title}</h2>
                   <div className="movie-details">
-                    <p><strong>Posted by:</strong> {movie.posted_by_user}</p>
+                    <p><strong>Posted by:</strong> {movie.posted_by_user.name}
+                    </p>
                     <p><strong>Description:</strong> {movie.description}</p>
-                    <p><strong>Likes:</strong> {movie.likes}</p>
-                    <p><strong>Hates:</strong> {movie.hates}</p>
+                    <p>
+                      {loggedIn && (userId !== movie.posted_by_user.id) ? (
+                          <span onClick={() =>
+                              handleLike(movie.title)} className="like-link">
+                            <strong>Likes:</strong>
+                          </span>
+                      ) : (
+                          <strong>Likes:</strong>
+                      )}
+                      {loggedIn && (userId !== movie.posted_by_user.id) ? (
+                          <span> {movie.likes} </span>
+                      ) : (
+                          movie.likes
+                      )}
+                    </p>
+
+                    <p><strong>Hates:</strong> <span onClick={() =>
+                        handleHate(movie.id)}>{movie.hates}</span></p>
+
                     <p><strong>Release Date:</strong> {new Date(
                         movie.date * 1).toLocaleString()}</p>
                   </div>

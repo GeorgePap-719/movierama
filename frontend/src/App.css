@@ -44,3 +44,17 @@
 .movie-details {
   margin-bottom: 10px;
 }
+
+.like-link,
+.hate-link {
+  color: blue; /* Change the color to your preference */
+  cursor: pointer;
+  text-decoration: underline;
+  margin-right: 5px;
+}
+
+.like-link:hover,
+.hate-link:hover {
+  color: darkblue; /* Change the color on hover to your preference */
+  text-decoration: none;
+}
