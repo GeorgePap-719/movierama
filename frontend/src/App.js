@@ -152,10 +152,30 @@ function App() {
     }
   };
 
-  const handleHate = (movieId) => {
-    // Implement action for hating a movie
-    console.log(`Hated movie with Id: ${movieId}`);
-    // You can perform any action here, such as sending a request to the backend to increment hates for the movie
+  const handleHate = async (movieTitle) => {
+    let opinion = {
+      title: movieTitle,
+      opinion: "HATE"
+    }
+    try {
+      const response = await fetch('http://localhost:8080/api/movies/opinion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(opinion),
+      });
+      if (!response.ok) {
+        console.log(await response.json())
+        throw new Error(`Failed post opinion with error: ${response.body}`);
+      }
+      console.log(`Hated movie with title: ${movieTitle}`);
+      // Refresh movies.
+      await fetchMoviesFromBackend()
+    } catch (error) {
+      console.error('Error hating movie:', error);
+    }
   };
 
   return (
@@ -195,10 +215,21 @@ function App() {
                           movie.likes
                       )}
                     </p>
-
-                    <p><strong>Hates:</strong> <span onClick={() =>
-                        handleHate(movie.id)}>{movie.hates}</span></p>
-
+                    <p>
+                      {loggedIn && (userId !== movie.posted_by_user.id) ? (
+                          <span onClick={() =>
+                              handleHate(movie.title)} className="like-link">
+                            <strong>Hates:</strong>
+                          </span>
+                      ) : (
+                          <strong>Hates:</strong>
+                      )}
+                      {loggedIn && (userId !== movie.posted_by_user.id) ? (
+                          <span> {movie.hates} </span>
+                      ) : (
+                          movie.hates
+                      )}
+                    </p>
                     <p><strong>Release Date:</strong> {new Date(
                         movie.date * 1).toLocaleString()}</p>
                   </div>
