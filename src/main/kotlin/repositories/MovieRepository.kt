@@ -17,6 +17,7 @@ interface MovieRepository {
     suspend fun save(input: MovieEntity): MovieEntity
     suspend fun findByTitle(target: String): MovieEntity?
     suspend fun findAll(): List<MovieEntity>
+    suspend fun findAllByUser(target: Int): List<MovieEntity>
     suspend fun postOpinionByMovieId(target: Int, newOpinion: Opinion): Int
     suspend fun updateOpinionByMovieId(target: Int, newOpinion: Opinion): Int
     suspend fun deleteAll(): Int
@@ -58,6 +59,14 @@ class MovieRepositoryImpl(private val template: R2dbcEntityTemplate) : MovieRepo
         val spec = template.databaseClient.sql {
             //language=MySQL
             "SELECT * FROM movierama.movies"
+        }
+        return mapToMovieEntities(spec)
+    }
+
+    override suspend fun findAllByUser(target: Int): List<MovieEntity> {
+        val spec = template.databaseClient.sql {
+            //language=MySQL
+            "SELECT * FROM movierama.movies WHERE user_id=$target"
         }
         return mapToMovieEntities(spec)
     }

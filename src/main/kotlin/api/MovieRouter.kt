@@ -28,6 +28,7 @@ class MovieRouter(private val movieHandler: MovieHandler) {
             POST("api/movies", movieHandler::registerMovie)
             GET("api/movies/{title}", movieHandler::findMovieByTitle)
             GET("api/movies", movieHandler::findAllMovies)
+            GET("api/movies/{user}/all", movieHandler::findAllMoviesByUser)
             POST("api/movies/opinion", movieHandler::postOpinion)
             GET("api/movies/opinions/all", movieHandler::findAllOpinionsForUser)
             POST("api/movies/opinion/retract", movieHandler::retractOpinion)
@@ -61,6 +62,16 @@ class MovieHandler(private val movieService: MovieService) {
         logger.info("request: GET api/movies/")
         val movies = movieService.findAll()
         return ServerResponse.ok().bodyValueAndAwait(movies)
+    }
+
+    suspend fun findAllMoviesByUser(request: ServerRequest): ServerResponse {
+        logger.info("request: GET api/movies/{user}/all")
+        val target = request.pathVariableOrNull("user")
+        requireNotNull(target) { "User id is missing from path." }
+        val userId = target.toIntOrNull()
+        requireNotNull(userId) { "Provided user-id is not convertable into an integer." }
+        val moviesByUser = movieService.findAllMoviesByUser(userId)
+        return ServerResponse.ok().bodyValueAndAwait(moviesByUser)
     }
 
     suspend fun postOpinion(request: ServerRequest): ServerResponse {

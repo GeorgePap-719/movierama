@@ -19,7 +19,7 @@ import org.springframework.stereotype.Repository
 interface UserRepository {
     suspend fun save(input: UserEntity): UserEntity
     suspend fun findById(target: Int): UserEntity?
-    suspend fun findAllById(targets: List<Int>): List<UserEntity>
+    suspend fun findAllByIds(targets: List<Int>): List<UserEntity>
     suspend fun findByName(target: String): UserEntity?
     suspend fun deleteAll(): Int
 }
@@ -50,7 +50,7 @@ class UserRepositoryImpl(private val template: R2dbcEntityTemplate) : UserReposi
         return mapToUserEntity(spec)
     }
 
-    override suspend fun findAllById(targets: List<Int>): List<UserEntity> {
+    override suspend fun findAllByIds(targets: List<Int>): List<UserEntity> {
         return template
             .select<UserEntity>()
             .matching(findUsersInIds(targets))

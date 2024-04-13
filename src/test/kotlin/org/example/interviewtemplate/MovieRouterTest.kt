@@ -140,9 +140,49 @@ class MovieRouterTest(
             .awaitRetrieveEntity<List<MovieWithUser>>()
         assert(response.statusCode.value() == 200)
         val body = assertNotNull(response.body)
-        // Assert gt because due concurrency db might have
-        // more movies that expected.
-        assert(body.size >= 10)
+        assert(body.size == 10)
+    }
+
+    @Test
+    fun testFindAllMoviesForUser(): Unit = runBlocking {
+        val user1 = prepareUser()
+        val user2 = prepareUser()
+        repeat(10) {
+            var newMovie = RegisterMovie(
+                "movie" + randomName(),
+                "cool one",
+                user1.id
+            )
+            var newMovieResponse = webClient.post()
+                .uri("$baseUrl/movies")
+                .accept(MediaType.APPLICATION_JSON)
+                .headers { it.setBearerAuth(user1.info.token) }
+                .bodyValue(newMovie)
+                .awaitRetrieveEntity<Movie>()
+            assert(newMovieResponse.statusCode.value() == 201)
+            assertNotNull(newMovieResponse.body)
+            newMovie = RegisterMovie(
+                "movie" + randomName(),
+                "cool one",
+                user2.id
+            )
+            newMovieResponse = webClient.post()
+                .uri("$baseUrl/movies")
+                .accept(MediaType.APPLICATION_JSON)
+                .headers { it.setBearerAuth(user2.info.token) }
+                .bodyValue(newMovie)
+                .awaitRetrieveEntity<Movie>()
+            assert(newMovieResponse.statusCode.value() == 201)
+            assertNotNull(newMovieResponse.body)
+        }
+        // Note here we make a request without authorization.
+        val response = webClient.get()
+            .uri("$baseUrl/movies/${user1.id}/all")
+            .accept(MediaType.APPLICATION_JSON)
+            .awaitRetrieveEntity<List<MovieWithUser>>()
+        assert(response.statusCode.value() == 200)
+        val body = assertNotNull(response.body)
+        assert(body.size == 10)
     }
 
     @Test

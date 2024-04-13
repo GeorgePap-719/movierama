@@ -16,6 +16,7 @@ interface MovieService {
     suspend fun removeOpinionForMovie(user: AuthenticatedUser, movieOpinion: MovieOpinion)
     suspend fun findAllOpinionsByUser(user: AuthenticatedUser): List<UserMovieOpinion>
     suspend fun findMovieByTitle(target: String): Movie?
+    suspend fun findAllMoviesByUser(target: Int): List<MovieWithUser>
     suspend fun findAll(): List<MovieWithUser>
 }
 
@@ -102,21 +103,32 @@ class MovieServiceImpl(
         return entity.toMovie()
     }
 
+    override suspend fun findAllMoviesByUser(target: Int): List<MovieWithUser> {
+        val users = userRepository.findAllByIds(listOf(target))
+        check(users.size == 1)
+        val user = users[0]
+        return movieRepository.findAllByUser(target).map { it.toMovieWithUser(user.name, user.id) }
+    }
+
     override suspend fun findAll(): List<MovieWithUser> {
         val movies = movieRepository.findAll()
         val ids = movies.map { it.userId }
-        val storedUsers = userRepository.findAllById(ids)
+        val storedUsers = userRepository.findAllByIds(ids)
         return movies.map { movie ->
             val user = storedUsers.find { it.id == movie.userId } ?: error("unexpected")
-            MovieWithUser(
-                movie.id,
-                movie.title,
-                movie.description,
-                User(user.name, user.id),
-                movie.date,
-                movie.likes,
-                movie.hates
-            )
+            movie.toMovieWithUser(user.name, user.id)
         }
     }
+}
+
+private fun MovieEntity.toMovieWithUser(username: String, userId: Int): MovieWithUser {
+    return MovieWithUser(
+        id,
+        title,
+        description,
+        User(username, userId),
+        date,
+        likes,
+        hates
+    )
 }

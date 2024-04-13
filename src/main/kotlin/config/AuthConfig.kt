@@ -79,8 +79,12 @@ class AuthConfig(
         override fun convert(exchange: ServerWebExchange): Mono<Authentication> {
             return mono {
                 val request = exchange.request
-                // Add exception for GET `/api/movies` path.
+                // Add exception for GET `/api/movies` path && `/api/movies/{user}/all`
                 if (request.path.toString() == "/api/movies" && request.method == HttpMethod.GET) {
+                    return@mono AuthenticationToken(null, true)
+                }
+                val matches = Regex("^/api/movies/\\d+/all$").matches(request.path.toString())
+                if (matches && request.method == HttpMethod.GET) {
                     return@mono AuthenticationToken(null, true)
                 }
                 val token = tryRetrieveToken(exchange.request.headers)
