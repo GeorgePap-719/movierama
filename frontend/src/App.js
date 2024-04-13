@@ -150,7 +150,7 @@ function App() {
                     <p><strong>Likes:</strong> {movie.likes}</p>
                     <p><strong>Hates:</strong> {movie.hates}</p>
                     <p><strong>Release Date:</strong> {new Date(
-                        movie.date).toLocaleString()}</p>
+                        movie.date * 1).toLocaleString()}</p>
                   </div>
                 </div>
             ))}
