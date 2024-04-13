@@ -89,7 +89,7 @@ class MovieServiceImpl(
         if (voted == null) {
             throw IllegalArgumentException("Users can only retract their vote.")
         }
-        movieOpinionRepository.deleteOpinionByMovieId(movie.id, movieOpinion.opinion)
+        movieOpinionRepository.deleteOpinionByMovieId(movie.id, user.id, movieOpinion.opinion)
     }
 
     override suspend fun findAllOpinionsByUser(user: AuthenticatedUser): List<UserMovieOpinion> {

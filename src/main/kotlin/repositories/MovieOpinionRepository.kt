@@ -17,7 +17,7 @@ interface MovieOpinionRepository {
     suspend fun save(input: MovieOpinionEntity): MovieOpinionEntity
     suspend fun updateOpinion(input: MovieOpinionEntity): Int
     suspend fun findAllOpinionsByUser(target: Int): List<MovieOpinionEntity>
-    suspend fun deleteOpinionByMovieId(target: Int, opinion: Opinion)
+    suspend fun deleteOpinionByMovieId(movieId: Int, userId: Int, opinion: Opinion)
     suspend fun deleteById(target: Int)
     suspend fun deleteAll(): Int
 }
@@ -68,15 +68,15 @@ class MovieOpinionRepositoryImpl(
         return mapToMovieOpinionEntities(spec)
     }
 
-    override suspend fun deleteOpinionByMovieId(target: Int, opinion: Opinion) {
-        logger.debug { "Deleting movie with id:$target." }
+    override suspend fun deleteOpinionByMovieId(movieId: Int, userId: Int, opinion: Opinion) {
+        logger.debug { "Deleting movie with id:$movieId." }
         val column = if (Opinion.HATE == opinion) "hates" else "likes"
         val spec = template.databaseClient.sql {
             //language=MySQL
-            """DELETE FROM movierama.opinions where movie_id=$target;
+            """DELETE FROM movierama.opinions where movie_id=$movieId AND user_id=$userId;
                 UPDATE movierama.movies
                 SET $column=$column - 1
-                where id=$target
+                where id=$movieId
             """.trimMargin()
         }
         val updatedRows = spec.fetch().awaitRowsUpdated()
