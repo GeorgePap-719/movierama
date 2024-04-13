@@ -14,6 +14,7 @@ interface MovieService {
     suspend fun register(input: RegisterMovie): Movie
     suspend fun postOpinion(user: AuthenticatedUser, movieOpinion: MovieOpinion)
     suspend fun removeOpinionForMovie(user: AuthenticatedUser, movieOpinion: MovieOpinion)
+    suspend fun findAllOpinionsByUser(user: AuthenticatedUser): List<UserMovieOpinion>
     suspend fun findMovieByTitle(target: String): Movie?
     suspend fun findAll(): List<MovieWithUser>
 }
@@ -88,6 +89,12 @@ class MovieServiceImpl(
             throw IllegalArgumentException("Users can only retract their vote.")
         }
         movieOpinionRepository.deleteOpinionByMovieId(movie.id, movieOpinion.opinion)
+    }
+
+    override suspend fun findAllOpinionsByUser(user: AuthenticatedUser): List<UserMovieOpinion> {
+        return movieOpinionRepository
+            .findAllOpinionsByUser(user.id)
+            .map { UserMovieOpinion(it.opinion, it.movieId) }
     }
 
     override suspend fun findMovieByTitle(target: String): Movie? {

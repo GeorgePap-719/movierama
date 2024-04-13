@@ -329,6 +329,73 @@ class MovieRouterTest(
     }
 
     @Test
+    fun testFindAllOpinionsForUser(): Unit = runBlocking {
+        val user = prepareUser()
+        val user2 = prepareUser()
+        repeat(10) {
+            val newMovie = RegisterMovie(
+                "movie" + randomName(),
+                "cool one",
+                user.id
+            )
+            val newMovieResponse = webClient.post()
+                .uri("$baseUrl/movies")
+                .accept(MediaType.APPLICATION_JSON)
+                .headers { it.setBearerAuth(user.info.token) }
+                .bodyValue(newMovie)
+                .awaitRetrieveEntity<Movie>()
+            assert(newMovieResponse.statusCode.value() == 201)
+            assertNotNull(newMovieResponse.body)
+            val movieOpinion = MovieOpinion(
+                newMovie.title,
+                Opinion.LIKE
+            )
+            webClient.post()
+                .uri("$baseUrl/movies/opinion")
+                .accept(MediaType.APPLICATION_JSON)
+                .headers { it.setBearerAuth(user2.info.token) }
+                .bodyValue(movieOpinion)
+                .awaitExchange {
+                    assert(it.statusCode().value() == 200)
+                    assert(it.awaitBodyOrNull<Unit>() == null)
+                }
+        }
+        val response = webClient.get()
+            .uri("$baseUrl/movies/opinions/all")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user2.info.token) }
+            .awaitRetrieveEntity<List<UserMovieOpinion>>()
+        assert(response.statusCode.value() == 200)
+        val body = assertNotNull(response.body)
+        assert(body.size == 10)
+    }
+
+    @Test
+    fun testEmptyOpinionsForUser(): Unit = runBlocking {
+        val user = prepareUser()
+        val user2 = prepareUser()
+        val newMovie = RegisterMovie(
+            "movie" + randomName(),
+            "cool one",
+            user.id
+        )
+        webClient.post()
+            .uri("$baseUrl/movies")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user.info.token) }
+            .bodyValue(newMovie)
+            .awaitRetrieveEntity<Movie>()
+        val response = webClient.get()
+            .uri("$baseUrl/movies/opinions/all")
+            .accept(MediaType.APPLICATION_JSON)
+            .headers { it.setBearerAuth(user2.info.token) }
+            .awaitRetrieveEntity<List<UserMovieOpinion>>()
+        assert(response.statusCode.value() == 200)
+        val body = assertNotNull(response.body)
+        assert(body.isEmpty())
+    }
+
+    @Test
     fun testRetractOpinion(): Unit = runBlocking {
         val user1 = prepareUser()
         val newMovie = RegisterMovie(

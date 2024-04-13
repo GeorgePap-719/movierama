@@ -62,3 +62,10 @@ data class MovieWithUser(
     val likes: Int,
     val hates: Int
 )
+
+@Serializable
+data class UserMovieOpinion(
+    val opinion: Opinion,
+    @SerialName("movie_id")
+    val movieId: Int
+)

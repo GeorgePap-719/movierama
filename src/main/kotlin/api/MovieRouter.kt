@@ -9,7 +9,6 @@ import org.example.interviewtemplate.dto.MovieOpinion
 import org.example.interviewtemplate.dto.RegisterMovie
 import org.example.interviewtemplate.services.AuthenticationException
 import org.example.interviewtemplate.services.MovieService
-import org.example.interviewtemplate.util.debug
 import org.example.interviewtemplate.util.logger
 import org.example.interviewtemplate.util.toMono
 import org.springframework.context.annotation.Bean
@@ -30,6 +29,7 @@ class MovieRouter(private val movieHandler: MovieHandler) {
             GET("api/movies/{title}", movieHandler::findMovieByTitle)
             GET("api/movies", movieHandler::findAllMovies)
             POST("api/movies/opinion", movieHandler::postOpinion)
+            GET("api/movies/opinions/all", movieHandler::findAllOpinionsForUser)
             POST("api/movies/opinion/retract", movieHandler::retractOpinion)
         }
     }
@@ -63,15 +63,11 @@ class MovieHandler(private val movieService: MovieService) {
         return ServerResponse.ok().bodyValueAndAwait(movies)
     }
 
-    private suspend inline fun <reified T : Any> ServerResponse.BodyBuilder.bodyValueAndAwait(body: T): ServerResponse =
-        body(body.toMono(), object : ParameterizedTypeReference<T>() {}).awaitSingle()
-
     suspend fun postOpinion(request: ServerRequest): ServerResponse {
-        logger.info("request: api/movies/opinion")
+        logger.info("request: POST api/movies/opinion")
         val movieOpinion = request.awaitReceive<MovieOpinion>()
         val principal = request.awaitPrincipal()
             ?: throw AuthenticationException("Principal is missing.")
-        logger.debug { (principal as AuthenticationToken).principalWithUserId!!.userId.toString() }
         if (principal.name.isNullOrBlank()) {
             throw AuthenticationException("Username in principal is missing.")
         }
@@ -80,6 +76,22 @@ class MovieHandler(private val movieService: MovieService) {
         movieService.postOpinion(user, movieOpinion)
         return ServerResponse.ok().buildAndAwait()
     }
+
+    suspend fun findAllOpinionsForUser(request: ServerRequest): ServerResponse {
+        logger.info("request: GET api/movies/opinion")
+        val principal = request.awaitPrincipal()
+            ?: throw AuthenticationException("Principal is missing.")
+        if (principal.name.isNullOrBlank()) {
+            throw AuthenticationException("Username in principal is missing.")
+        }
+        val userId = retrieveUserId(principal)
+        val user = AuthenticatedUser(principal.name, userId)
+        val opinions = movieService.findAllOpinionsByUser(user)
+        return ServerResponse.ok().bodyValueAndAwait(opinions)
+    }
+
+    private suspend inline fun <reified T : Any> ServerResponse.BodyBuilder.bodyValueAndAwait(body: T): ServerResponse =
+        body(body.toMono(), object : ParameterizedTypeReference<T>() {}).awaitSingle()
 
     suspend fun retractOpinion(request: ServerRequest): ServerResponse {
         logger.info("request: api/movies/opinion/retract")
