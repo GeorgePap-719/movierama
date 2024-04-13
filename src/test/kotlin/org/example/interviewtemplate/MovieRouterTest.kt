@@ -132,7 +132,6 @@ class MovieRouterTest(
                 .awaitRetrieveEntity<Movie>()
             assert(newMovieResponse.statusCode.value() == 201)
             assertNotNull(newMovieResponse.body)
-
         }
         // Note here we make a request without authorization.
         val response = webClient.get()

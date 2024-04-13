@@ -104,7 +104,7 @@ class MovieServiceImpl(
             MovieWithUser(
                 movie.title,
                 movie.description,
-                user.name,
+                User(user.name, user.id),
                 movie.date,
                 movie.likes,
                 movie.hates

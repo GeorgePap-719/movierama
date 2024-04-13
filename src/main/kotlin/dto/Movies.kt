@@ -54,7 +54,7 @@ data class MovieWithUser(
     val title: String,
     val description: String,
     @SerialName("posted_by_user")
-    val postedByUser: String,
+    val user: User,
     /**
      * Represents the date it was registered.
      */
