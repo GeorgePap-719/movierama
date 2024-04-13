@@ -51,6 +51,7 @@ enum class Opinion {
 
 @Serializable
 data class MovieWithUser(
+    val id: Int,
     val title: String,
     val description: String,
     @SerialName("posted_by_user")

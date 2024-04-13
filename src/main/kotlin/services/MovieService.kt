@@ -103,12 +103,13 @@ class MovieServiceImpl(
     }
 
     override suspend fun findAll(): List<MovieWithUser> {
-        val movies = movieRepository.findAll().map { it.toMovie() }
+        val movies = movieRepository.findAll()
         val ids = movies.map { it.userId }
         val storedUsers = userRepository.findAllById(ids)
         return movies.map { movie ->
             val user = storedUsers.find { it.id == movie.userId } ?: error("unexpected")
             MovieWithUser(
+                movie.id,
                 movie.title,
                 movie.description,
                 User(user.name, user.id),
