@@ -4,6 +4,7 @@ import './App.css';
 function App() {
 
   const [movies, setMovies] = useState([]);
+  const [moviesView, setMoviesView] = useState([]);
   const [opinions, setOpinions] = useState([]);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -28,24 +29,18 @@ function App() {
         throw new Error('Failed to fetch movies');
       }
       const data = await response.json();
-      setMovies(data);
+      setMovies(data)
+      setMoviesView(data);
     } catch (error) {
       console.error('Error fetching movies:', error);
     }
   };
 
-  const fetchMoviesFromBackendByUser = async (user) => {
-    try {
-      const response = await fetch(
-          `http://localhost:8080/api/movies/by/${user.id}/all`, {});
-      if (!response.ok) {
-        throw new Error(`Failed to fetch movies by user:${user.id}`);
-      }
-      const data = await response.json();
-      setMovies(data);
-    } catch (error) {
-      console.error('Error fetching movies by user:', error);
-    }
+  const filterMoviesByUser = (user) => {
+    const moviesByUser = movies.filter(
+        movie => user.id === movie.posted_by_user.id
+    )
+    setMoviesView(moviesByUser)
   };
 
   const fetchOpinions = async (token) => {
@@ -262,14 +257,14 @@ function App() {
         </header>
         <main>
           <div className="movie-list">
-            {movies.map(movie => (
+            {moviesView.map(movie => (
                 <div key={movie.id} className="movie">
                   <h2 className="movie-title">{movie.title}</h2>
                   <div className="movie-details">
                     <p>
 
                       <span onClick={() =>
-                          fetchMoviesFromBackendByUser(movie.posted_by_user)}
+                          filterMoviesByUser(movie.posted_by_user)}
                             className="user-name">
                          <strong>Posted by:</strong>
                       </span>
