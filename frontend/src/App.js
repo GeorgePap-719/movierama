@@ -2,7 +2,9 @@ import React, {useEffect, useState} from 'react';
 import './App.css';
 
 function App() {
-
+  // We treat the `movies` array as immutable, and we should not
+  // mutate it. Any operations on it should be applied on `moviesView`
+  // variable.
   const [movies, setMovies] = useState([]);
   const [moviesView, setMoviesView] = useState([]);
   const [opinions, setOpinions] = useState([]);
@@ -42,6 +44,22 @@ function App() {
     )
     setMoviesView(moviesByUser)
   };
+
+  function filterMoviesByLikes() {
+    const sortedMovies = movies.toSorted((a, b) => a.likes - b.likes)
+    setMoviesView(sortedMovies)
+  }
+
+  function filterMoviesByHates() {
+    const sortedMovies = movies.toSorted((a, b) => a.hates - b.hates)
+    setMoviesView(sortedMovies)
+  }
+
+  function filterMoviesByDate() {
+    const sortedMovies = movies.toSorted((a, b) => a.date - b.date)
+    setMoviesView(sortedMovies)
+  }
+
 
   const fetchOpinions = async (token) => {
     try {
@@ -256,6 +274,17 @@ function App() {
           <h1>Browse Movies</h1>
         </header>
         <main>
+          <div>
+            <span>Sort by: </span>
+            <di>
+            <span onClick={filterMoviesByLikes}
+                  className="sort-bt">Likes</span>
+              <span onClick={filterMoviesByHates}
+                    className="sort-bt">Hates</span>
+              <span onClick={filterMoviesByDate}
+                    className="sort-bt">Date</span>
+            </di>
+          </div>
           <div className="movie-list">
             {moviesView.map(movie => (
                 <div key={movie.id} className="movie">

@@ -9,7 +9,8 @@
 .like-link,
 .hate-link,
 .opinion-link,
-.user-name {
+.user-name,
+.sort-bt {
   color: blue;
   cursor: pointer;
   text-decoration: underline;
