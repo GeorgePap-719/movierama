@@ -1,1 +1,1 @@
-rootProject.name = "interview-template"
+rootProject.name = "workable-assignment"
