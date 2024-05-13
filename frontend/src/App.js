@@ -276,14 +276,14 @@ function App() {
         <main>
           <div>
             <span>Sort by: </span>
-            <di>
+            <div>
             <span onClick={filterMoviesByLikes}
                   className="sort-bt">Likes</span>
               <span onClick={filterMoviesByHates}
                     className="sort-bt">Hates</span>
               <span onClick={filterMoviesByDate}
                     className="sort-bt">Date</span>
-            </di>
+            </div>
           </div>
           <div className="movie-list">
             {moviesView.map(movie => (

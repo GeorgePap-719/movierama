@@ -68,7 +68,7 @@ class AuthServiceImpl(
         val claimsSet = JWTClaimsSet.Builder()
             .issuer(issuer)
             .subject(username)
-            // Make it valid for 1 hour.
+            // Make it valid for 10 minutes.
             .expirationTime(Date(Date().time + 60 * 10000))
             .build()
         val signedJwt = SignedJWT(JWSHeader(JWSAlgorithm.HS256), claimsSet)
